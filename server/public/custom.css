@@ -1,0 +1,54 @@
+/* CSS rules for the entire website */
+
+body{font-family: 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', sans-serif;}
+
+main{padding: 0!important;margin: 0!important;}
+
+ul{list-style: none;}
+
+hr{margin-left: 0;width: 15%;height: .01em;background-color: whitesmoke;}
+
+p{font-size: 1.2em;font-weight: normal;}
+b{font-size: 1.2em;font-weight: normal;}
+
+.title{font-size: 2.5em;font-weight: lighter;}
+.subtitle{font-size: 1.6em;font-weight: normal;}
+
+@keyframes fade-in-up {0% {opacity: 0;}100% {transform: translateY(0);opacity: 1;}}
+.video{position: fixed;bottom: 5%;left: 3%;width: 17%;height: auto;transform: translateY(100%);animation: fade-in-up 0.75s ease forwards;z-index: 100;cursor: pointer;}
+.video #webcam{border: 0 solid;border-radius: 5%;}
+
+.notification{font-size: 1.2em;font-weight: normal;cursor: pointer;}
+.notification-adv{visibility: hidden;font-size: 1em;font-weight: normal;cursor: pointer;}
+.show{visibility: visible;}
+
+/* Sidebar */
+.sidebar {/*position: fixed;*/top: 0;bottom: 0;left: 0;z-index: 1;min-height: 100vh;text-align: center;background-image: url('svg/sidemenu.svg');background-repeat: no-repeat;background-size: cover;}
+.sidebar-sticky{position: relative;top: 0;padding-top: .5rem;overflow-x: hidden;overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */}
+.sidebar .logo{max-width: 25%;}
+.sidebar .brand{font-size: 1.6em;font-weight: lighter;}
+.sidebar .brand:hover{text-decoration: none;}
+.sidebar .brand p{font-size: 1em;font-weight: lighter;}
+.sidebar .founder{font-size: .8em;font-weight: bolder;}
+.sidebar .founder:hover{text-decoration: none;text-shadow: .2em .2em .5em black;}
+.sidebar .nav-link{font-size: 1em;font-weight: lighter;text-transform: uppercase;}
+.sidebar .nav-link:hover{font-size: 1.1em;text-shadow: .2em .2em .5em black;}
+.sidebar .nav-link.active{font-weight: bolder !important;}
+
+/* Navbar */
+.navbar{z-index: 2;background-image: url('svg/sidemenu.svg');background-repeat: no-repeat;background-size: cover;}
+.navbar .brand{font-size: 1.8em;font-weight: lighter;}
+.navbar .founder{font-size: .8em;font-weight: bolder;}
+.navbar .navbar-toggler {right: .8em;}
+@media (max-width: 767.98px) {.sidebar{top: -5%;}.sidebar .brand{display: none;}.navbar{visibility: visible;}}
+@media (min-width: 767.98px) {.navbar{display: none;}}
+@supports ((position: sticky)) {.sidebar-sticky {position: sticky;}}
+
+/* Avatars */
+.avatar{cursor: pointer;transition: .5s ease;}
+.avatar:hover img{opacity: 0.3;}
+.avatar:hover .overlay {opacity: 1;}
+.overlay{transition: .5s ease;opacity: 0;position: absolute;top: 50%;left: 50%;transform: translate(-35%, -50%);-ms-transform: translate(-35%, -50%);font-size: 5em}
+.avatar-overlay{cursor: pointer;transition: .5s ease;}
+.avatar-overlay:hover{opacity: 0.5;}
+.selected{transition: .1s ease;border-style: double;border-radius: 5%;border-width: thick;}

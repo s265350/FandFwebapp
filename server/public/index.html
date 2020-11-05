@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+    <title>F&F Home</title>
+
+    <!-- JavaScript (note the defer attribute) -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS, then Moment js -->
+    <script defer src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script defer src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    
+    <!-- Icons -->
+    <script src="https://kit.fontawesome.com/210fee7740.js"></script>
+    
+    <!-- Custom CSS -->
+    <link href="custom.css" rel="stylesheet">
+
+    <!-- Custom JavaScript -->
+    <script defer type='module' src="src/navigation.js"></script>
+    <script type='module' src='src/main.js'></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <div class="container justify-content-start">
+            <a class="brand text-light" href="index.html"><img class="col-2" src="svg/logo.svg"></img>F&F recognition system</a>
+            <button class="navbar-toggler position-absolute d-md-none" role="button" type="button" data-toggle="collapse" data-target="#sidebar" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse pt-5">
+                <div id="logoblock" class="row justify-content-center pb-5">
+                    <a class="brand" href="index.html"><div class="col">
+                        <img class="logo" src="svg/logo.svg"></img>
+                        <p class="text-light">F&F recognition system</p>
+                    </div></a>
+                    <a class="founder text-white-50" href="https://www.polito.it/" target="_blank">Politecnico di Torino </a>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="sidebar-sticky pt-5">
+                        <ul class="nav flex-column">
+                            <li class="nav-item"><a id="sideHome" class="nav-link text-light active" href="javascript:void(0)">home</a></li>
+                            <li class="nav-item"><a id="sideRecognize" class="nav-link text-light" href="javascript:void(0)">recognize</a></li>
+                            <li class="nav-item"><a id="sideProfile" class="nav-link text-light" href="javascript:void(0)">profile</a></li>
+                            <li class="nav-item"><a id="sideAboutUs" class="nav-link text-light" href="javascript:void(0)">about us</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            
+            <main id="main" role="main" class="col-md-9 col-lg-10">
+                <div id="videowrap">
+                    <div class="embed-responsive embed-responsive-4by3" style="padding: 0!important;margin: 0!important;">
+                        <video id="webcam" autoplay class="embed-responsive-item"></video>
+                    </div>
+                </div>
+                <div id="content"></div>
+            </main>
+        </div>
+      </div>
+</body>
+</html>
