@@ -9,7 +9,7 @@ function loadHome(){
     document.getElementById("content").innerHTML = "";
 }
 
-function loadRecognize(){
+function loadRecognize(loggedProfile){
     /* SIDEMENU */
     document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});
     document.getElementById("sideRecognize").classList.add("active");
@@ -41,11 +41,11 @@ function loadRecognize(){
     container.appendChild(list);
     // list items
     //TODO: db call
-    list.appendChild(recognizeListItem("svg/avatar.svg"));
-    list.appendChild(recognizeListItem("svg/avatar.svg"));
+    list.appendChild(recognizeListItem(loggedProfile, "svg/avatar.svg"));
+    list.appendChild(recognizeListItem(loggedProfile, "svg/avatar.svg"));
 }
 
-function loadProfile(profile){
+function loadProfile(loggedProfile){
     /* SIDEMENU */
     document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});
     document.getElementById("sideProfile").classList.add("active");
@@ -56,17 +56,16 @@ function loadProfile(profile){
     // header
     const img = document.createElement("img");img.setAttribute("class", "img-fluid");img.setAttribute("src", "svg/polito.png");content.appendChild(img);
     const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
-    let title = document.createElement("p");title.setAttribute("id", "profile_name");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-user mr-3"></i>`+profile.firstName+" "+profile.lastName;container.appendChild(title);
+    let title = document.createElement("p");title.setAttribute("id", "profile_title");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-user mr-3"></i>`+loggedProfile.firstName+" "+loggedProfile.lastName;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
-    container.appendChild(createProfile(profile, false));
-    container.appendChild(createInfoModal(`These badges specify the roles related to this user for the system and the family and to which priviledges it has access.`));
-    container.appendChild(profileAccuracy(profile.profileId));
+    container.appendChild(createProfile(loggedProfile, loggedProfile));
+    container.appendChild(profileAccuracy(loggedProfile.profileId));
     title = document.createElement("p");title.setAttribute("class", "subtitle text-dark pt-4");title.innerHTML = `<i class="fa fa-home mr-2"></i>Family`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
     const list = document.createElement("div");list.setAttribute("class", "row align-items-center justify-content-start");container.appendChild(list);
     // fill list
-    list.appendChild(familyListItem(new Profile("profile1", "firstName", "lastName", "1234567890", "email", "Adult", "Father", true, true, false, "svg/avatar.svg")));
-    list.appendChild(familyListItem(new Profile("profile2", "firstName", "lastName", "1234567890", "email", "Adult", "Father", true, true, false, "svg/avatar.svg")));
+    list.appendChild(familyListItem(loggedProfile, new Profile("firstNameDad", "lastNameDad", "1234567890", "dad@lastName.it", "Adult", "Father", true, true, false, "svg/avatar.svg")));
+    list.appendChild(familyListItem(loggedProfile, new Profile("firstNameSon", "lastNameSon", "123456789", "son@lastName.it", "Minor", "Son", false, false, false, "svg/avatar.svg")));
 }
 
 function loadAboutUs(){
@@ -114,18 +113,18 @@ function loadAboutUs(){
     div.appendChild(element);
 }
 
-function recognizeListItem(imgPath){
+function recognizeListItem(loggedProfile, imgPath){
     let img = document.createElement("img");
     img.setAttribute("id", "recognize_"+imgPath);
     img.setAttribute("class", "avatar-overlay img-respinsive col-sm-4 col-md-3 col-lg-3 mb-4");
     img.setAttribute("src", imgPath);
     img.setAttribute("data-toggle", "modal");
     img.setAttribute("data-target", "#recognize_modal");
-    img.addEventListener("click", () => {document.getElementById("container").appendChild(createRecognizeModal(imgPath));});
+    img.addEventListener("click", () => {document.getElementById("container").appendChild(createRecognizeModal(loggedProfile, imgPath));});
     return img;
 }
 
-function createRecognizeModal(imgPath){
+function createRecognizeModal(loggedProfile, imgPath){
     const modal = document.createElement("div");modal.setAttribute("id", "recognize_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "selectionModal");modal.setAttribute("data-backdrop", "static");modal.setAttribute("data-keyboard", "false");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
     const content = document.createElement("div");content.setAttribute("class", "modal-content");doc.appendChild(content);
@@ -148,8 +147,8 @@ function createRecognizeModal(imgPath){
     const selection = document.createElement("div");selection.setAttribute("id", "selection");selection.setAttribute("class", "row justify-content-start m-1");div.appendChild(selection);
     // fill list
     //TODO: db call
-    selection.appendChild(profileListItem(new Profile("profile1", "firstName", "lastName", "1234567890", "email", "Adult", "Father", true, true, false, "svg/avatar.svg")));
-    selection.appendChild(profileListItem(new Profile("profile2", "firstName", "lastName", "1234567890", "email", "Adult", "Father", true, true, false, "svg/avatar.svg")));
+    selection.appendChild(profileListItem(new Profile("firstNameDad", "lastNameDad", "1234567890", "dad@lastName.it", "Adult", "Father", true, true, false, "svg/avatar.svg")));
+    selection.appendChild(profileListItem(new Profile("firstNameSon", "lastNameSon", "123456789", "son@lastName.it", "Minor", "Son", false, false, false, "svg/avatar.svg")));
     // modal footer
     const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-between");content.appendChild(footer);
     element = document.createElement("button");element.setAttribute("id", "recognize_save");element.setAttribute("type", "button");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-target", "#recognize_modal");element.innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;
@@ -158,18 +157,16 @@ function createRecognizeModal(imgPath){
             document.getElementById("selection").childNodes.forEach(div => {
                 if(div.firstChild.classList.contains("selected")){
                     const selected = div.getAttribute("id").split("_")[1];
-                    console.log(selected);
                     //TODO: db call
+                    loadRecognize();
                 }
             });
-            document.getElementById("recognize_list").removeChild(document.getElementById("recognize_"+imgPath));
         }
-        document.getElementById("container").removeChild(document.getElementById("recognize_modal"));
     });
     footer.appendChild(element);
     element = document.createElement("button");element.setAttribute("id", "recognize_new");element.setAttribute("type", "button");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-user-plus mr-2"></i>Create new profile`;
     element.addEventListener("click", () => {
-        document.getElementById("container").appendChild(createEditModal(imgPath));
+        document.getElementById("container").appendChild(createEditModal(loggedProfile, imgPath));
         document.getElementById("container").removeChild(document.getElementById("recognize_modal"));
     });
     footer.appendChild(element);
@@ -201,7 +198,7 @@ function profileListItem(profile){
     return container;
 }
 
-function createEditModal(profile){
+function createEditModal(loggedProfile, profile){
     const modal = document.createElement("div");modal.setAttribute("id", "edit_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "editModal");modal.setAttribute("aria-hidden", "true");modal.setAttribute("data-backdrop", "static");modal.setAttribute("data-keyboard", "false");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
     const content = document.createElement("div");content.setAttribute("class", "modal-content");doc.appendChild(content);
@@ -217,7 +214,7 @@ function createEditModal(profile){
     const form_row =  document.createElement("div");form_row.setAttribute("class", "form-row");form.appendChild(form_row);
     div =  document.createElement("div");div.setAttribute("class", "col-md-5 col-lg-4");form_row.appendChild(div);
     let group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
-    element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive m-2");if (typeof profile === 'string' || profile instanceof String){element.setAttribute("src", profile);} else {element.setAttribute("src", profile.avatar);}group.appendChild(element);
+    element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive m-2");if(typeof profile === 'string' || profile instanceof String){element.setAttribute("src", profile);}else{element.setAttribute("src", profile.avatar);}group.appendChild(element);
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     let input = document.createElement("div");input.setAttribute("class", "custom-file");group.appendChild(input);
     element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.appendChild(element);
@@ -265,13 +262,14 @@ function createEditModal(profile){
     element = document.createElement("label");element.setAttribute("class", "input-group-text");element.setAttribute("for", "edit_systemrole");element.innerText = `System role`;
     element.addEventListener("click", () => {
         document.getElementById("edit_notification_adv").classList.remove("text-danger", "text-warning");
-        document.getElementById("edit_notification_adv").classList.add("show", "text-secondary");
-        document.getElementById("edit_notification_adv").innerHTML = `<b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;});
+        document.getElementById("edit_notification_adv").classList.add("text-secondary", "show");
+        document.getElementById("edit_notification_adv").innerHTML = `<i class="fas fa-info mr-3"></i><b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;
+    });
     group.appendChild(element);
     group = document.createElement("select");group.setAttribute("id", "edit_system");group.setAttribute("class", "custom-select border-warning");
     group.onchange = function(){
-        if(document.getElementById("edit_system").value == 0) document.getElementById("edit_system").classList.add("border-warning");
-        else document.getElementById("edit_system").classList.remove("border-warning");
+        if(document.getElementById("edit_system").value == 0){document.getElementById("edit_system").classList.add("border-warning");}
+        else{document.getElementById("edit_system").classList.remove("border-warning");}
     };
     input.appendChild(group);
     element = document.createElement("option");element.setAttribute("value", "0");element.innerText = `Choose...*`;element.selected = true;group.appendChild(element);
@@ -285,8 +283,9 @@ function createEditModal(profile){
     element = document.createElement("label");element.setAttribute("class", "input-group-text");element.setAttribute("for", "edit_familyrole");element.innerText = `Family role`;group.appendChild(element);
     element.addEventListener("click", () => {
         document.getElementById("edit_notification_adv").classList.remove("text-danger", "text-warning");
-        document.getElementById("edit_notification_adv").classList.add("show", "text-secondary");
-        document.getElementById("edit_notification_adv").innerHTML = `<b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;});
+        document.getElementById("edit_notification_adv").classList.add("text-secondary", "show");
+        document.getElementById("edit_notification_adv").innerHTML = `<i class="fas fa-info mr-3"></i><b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;
+    });
     group = document.createElement("select");group.setAttribute("id", "edit_family");group.setAttribute("class", "custom-select");input.appendChild(group);
     element = document.createElement("option");element.setAttribute("value", "0");element.innerText = `Choose...`;element.selected = true;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "1");element.innerText = `Father`;group.appendChild(element);
@@ -314,46 +313,32 @@ function createEditModal(profile){
                 document.getElementById("edit_notification_adv").classList.add("show", "text-danger");
                 document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
         } else {
-            let system = "";
-            document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)system = child.innerText;});
-            let family = "";
-            document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)family = child.innerText;});
             const new_profile = new Profile(
-                document.getElementById("edit_firstname").value + document.getElementById("edit_phone").value,
-                document.getElementById("edit_firstname").value,
-                document.getElementById("edit_lastname").value,
-                document.getElementById("edit_phone").value,
-                document.getElementById("edit_mail").value,
-                system,
-                family,
+                document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
+                document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
                 document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-                document.getElementById("edit_phonebutton").classList.contains("fa-bell"),
-                document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
+                document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
                 document.getElementById("edit_avatar").getAttribute("src")
             );
+            document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)new_profile.system = child.innerText;});
+            document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)new_profile.family = child.innerText;});
             //TODO: db call
             console.log(new_profile);
-            if(typeof profile === 'string' || profile instanceof String){
-                document.getElementById("recognize_list").removeChild(document.getElementById("recognize_"+profile));
-            }else{
-                document.getElementById("container").removeChild(document.getElementById("profile"));
-                document.getElementById("info_modal").insertAdjacentElement("beforebegin", createProfile(new_profile, false));
-            };
-            $('#edit_modal').modal('toggle');
-            document.getElementById("container").removeChild(document.getElementById("edit_modal"));
+            $("#edit_modal").modal("toggle");
+            if(typeof profile === 'string' || profile instanceof String){loadRecognize();}
+            else{loadProfile(loggedProfile);};
         }
     });
     footer.appendChild(element);
     return modal;
 }
 
-function createProfile(profile, modal){
-    const container = document.createElement("div");container.setAttribute("id", "profile");if(modal){container.setAttribute("id", "profile_"+profile.profileId);}container.setAttribute("class", "row align-items-center justify-content-around");
-    let div = document.createElement("div");div.setAttribute("class", "avatar col-md-4 col-lg-3 mb-2");if(modal){div.setAttribute("class", "avatar col-md-7 col-lg-8 mb-2");}container.appendChild(div);
+function createProfile(loggedProfile, profile){
+    const modal = (loggedProfile.profileId !== profile.profileId);
+    const container = document.createElement("div");container.setAttribute("id", "profile");if(modal){container.setAttribute("id", "profile_"+profile.profileId);}container.setAttribute("class", "row align-items-center justify-content-start");
+    let div = document.createElement("div");if(modal){div.setAttribute("class", "avatar col-md-4 col-lg-3 mb-2");}else{div.setAttribute("class", "avatar-overlay col-md-4 col-lg-3 mb-2");}container.appendChild(div);
     let element = document.createElement("img");element.setAttribute("id", "profile_avatar");if(modal){element.setAttribute("id", "profile_avatar_"+profile.profileId);}element.setAttribute("class", "img-rounded img-respinsive");element.setAttribute("src", profile.avatar);div.appendChild(element);
-    element = document.createElement("span");element.setAttribute("class", "overlay text-primary");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-edit mr-2"></i>`;
-    element.addEventListener("click", () => {document.getElementById("container").appendChild(createEditModal(profile));});
-    div.appendChild(element);
+    if(!modal){element = document.createElement("span");element.setAttribute("class", "overlay text-primary");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-edit mr-2"></i>`;element.addEventListener("click", () => {document.getElementById("container").appendChild(createEditModal(loggedProfile, profile));});div.appendChild(element);}
     div = document.createElement("ul");div.setAttribute("class", "col-md-8 col-lg-9 justify-content-start");container.appendChild(div);
     element = document.createElement("li");div.appendChild(element);
     let span = document.createElement("span");span.setAttribute("id", "notifications_main");if(modal){span.setAttribute("id", "notifications_main_"+profile.profileId);}span.setAttribute("class", "notification notification-main mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-bell-slash mr-3"></i>`;
@@ -393,7 +378,8 @@ function createProfile(profile, modal){
                 document.getElementById("notifications_email"+profileId).firstChild.classList.remove("fa-envelope-open");
                 document.getElementById("notifications_email"+profileId).firstChild.classList.add("fa-envelope");
             }
-            showAdv(profileId);
+            console.log(profileId);
+            showAdv(profileId, false);
         }
         profile.notifications = document.getElementById("notifications_main"+profileId).firstChild.classList.contains("fa-bell");
         profile.notificationsPhone = document.getElementById("notifications_phone"+profileId).firstChild.classList.contains("fa-phone");
@@ -403,7 +389,7 @@ function createProfile(profile, modal){
     element.appendChild(span);
     element = document.createElement("b");element.setAttribute("id", "notifications_main_text");if(modal){element.setAttribute("id", "notifications_main_text_"+profile.profileId);}element.innerText = `Notifications`;span.appendChild(element);
     element = document.createElement("li");div.appendChild(element);
-    span = document.createElement("span");span.setAttribute("id", "notifications_phone");if(modal){element.setAttribute("id", "notifications_phone_"+profile.profileId);}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-phone-slash mr-3"></i>`;
+    span = document.createElement("span");span.setAttribute("id", "notifications_phone");if(modal){span.setAttribute("id", "notifications_phone_"+profile.profileId);}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-phone-slash mr-3"></i>`;
     if(profile.notificationsPhone){span.classList.remove("text-secondary");span.classList.add("text-primary");span.innerHTML = `<i class="fa fa-phone mr-3"></i>`;}
     span.addEventListener("click", () => {
         let profileId = "";
@@ -422,7 +408,7 @@ function createProfile(profile, modal){
                 node.classList.add("text-primary");
             }
         }
-        showAdv(profileId);
+        showAdv(profileId, false);
         profile.notifications = document.getElementById("notifications_main"+profileId).firstChild.classList.contains("fa-bell");
         profile.notificationsPhone = document.getElementById("notifications_phone"+profileId).firstChild.classList.contains("fa-phone");
         profile.notificationsEmail = document.getElementById("notifications_email"+profileId).firstChild.classList.contains("fa-envelope");
@@ -432,7 +418,7 @@ function createProfile(profile, modal){
     element = document.createElement("b");element.setAttribute("id", "notifications_phone_text");if(modal){element.setAttribute("id", "notifications_phone_text_"+profile.profileId);}element.innerText = profile.phone;span.appendChild(element);
     if(profile.email != ""){
         element = document.createElement("li");div.appendChild(element);
-        span = document.createElement("span");span = document.createElement("span");span.setAttribute("id", "notifications_email");if(modal){element.setAttribute("id", "notifications_email_"+profile.profileId);}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-envelope-open mr-3"></i>`;
+        span = document.createElement("span");span = document.createElement("span");span.setAttribute("id", "notifications_email");if(modal){span.setAttribute("id", "notifications_email_"+profile.profileId);}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-envelope-open mr-3"></i>`;
         if(profile.notificationsEmail){span.classList.remove("text-secondary");span.classList.add("text-primary");span.innerHTML = `<i class="fa fa-envelope mr-3"></i>`;}
         span.addEventListener("click", () => {
             let profileId = "";
@@ -451,7 +437,7 @@ function createProfile(profile, modal){
                     node.classList.add("text-primary");
                 }
             }
-            showAdv(profileId);
+            showAdv(profileId, false);
             profile.notifications = document.getElementById("notifications_main"+profileId).firstChild.classList.contains("fa-bell");
             profile.notificationsPhone = document.getElementById("notifications_phone"+profileId).firstChild.classList.contains("fa-phone");
             profile.notificationsEmail = document.getElementById("notifications_email"+profileId).firstChild.classList.contains("fa-envelope");
@@ -461,54 +447,37 @@ function createProfile(profile, modal){
         element = document.createElement("b");element.setAttribute("id", "notifications_email_text");if(modal){element.setAttribute("id", "notifications_email_text_"+profile.profileId);}element.innerText = profile.email;span.appendChild(element);
     }
     element = document.createElement("li");div.appendChild(element);
-    span = document.createElement("span");span.setAttribute("id", "notifications_adv");if(modal){element.setAttribute("id", "notifications_adv_"+profile.profileId);}span.setAttribute("class", "notification-adv text-danger");span.setAttribute("data-toggle", "modal");span.setAttribute("data-target", "#info_modal");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i>`;element.appendChild(span);
+    span = document.createElement("span");span.setAttribute("id", "notifications_adv");if(modal){span.setAttribute("id", "notifications_adv_"+profile.profileId);}span.setAttribute("class", "notification-adv text-danger");element.appendChild(span);
     span.addEventListener("click", () => {
         let profileId = "";
         if(modal)profileId = "_"+profile.profileId;
         document.getElementById("notifications_adv"+profileId).classList.remove("show");
     });
-    element = document.createElement("b");element.setAttribute("id", "notifications_adv_text");if(modal){element.setAttribute("id", "notifications_adv_text_"+profile.profileId);}element.innerText = "You need to turn on notifications first";span.appendChild(element);
     element = document.createElement("li");element.setAttribute("class", "mt-2");div.appendChild(element);
-    span = document.createElement("button");span.setAttribute("id", "profile_system");if(modal){element.setAttribute("id", "profile_system_"+profile.profileId);}span.setAttribute("class", "btn btn-secondary btn-rounded");span.setAttribute("data-toggle", "modal");span.setAttribute("data-target", "#info_modal");span.innerText = profile.system;element.appendChild(span);
-    span = document.createElement("button");span.setAttribute("id", "profile_family");if(modal){element.setAttribute("id", "profile_family_"+profile.profileId);}span.setAttribute("class", "btn btn-info btn-rounded btn-md ml-3");span.setAttribute("data-toggle", "modal");span.setAttribute("data-target", "#info_modal");span.innerText = profile.family;element.appendChild(span);
+    span = document.createElement("button");span.setAttribute("id", "profile_system");if(modal){span.setAttribute("id", "profile_system_"+profile.profileId);}span.setAttribute("class", "btn btn-secondary btn-rounded");span.innerText = profile.system;span.addEventListener("click", () => {if(modal){showAdv("_"+profile.profileId, true);}else{showAdv("", true);}});element.appendChild(span);
+    span = document.createElement("button");span.setAttribute("id", "profile_family");if(modal){span.setAttribute("id", "profile_family_"+profile.profileId);}span.setAttribute("class", "btn btn-info btn-rounded btn-md ml-3");span.innerText = profile.family;span.addEventListener("click", () => {if(modal){showAdv("_"+profile.profileId, true);}else{showAdv("", true);}});element.appendChild(span);
     return container;
 }
 
-function showAdv(profileId){
-    let count = 0;
-    document.getElementById("profile"+profileId).childNodes[1].childNodes.forEach(li => {if(li.firstChild.classList.contains("text-primary")) count++;});
-    switch(count){
-        case 0:{
-            document.getElementById("notifications_adv"+profileId).classList.toggle("show");
-            document.getElementById("notifications_adv"+profileId).classList.remove("text-warning");
-            document.getElementById("notifications_adv"+profileId).classList.add("text-danger");
-            document.getElementById("notifications_adv_text"+profileId).innerText = "You need to turn on notifications first";
-            break;
-        }
-        case 1:{
-            document.getElementById("notifications_adv"+profileId).classList.toggle("show");
-            document.getElementById("notifications_adv"+profileId).classList.remove("text-danger");
-            document.getElementById("notifications_adv"+profileId).classList.add("text-warning");
-            document.getElementById("notifications_adv_text"+profileId).innerText = "You can enable/disable phone and email notifications separately";
-            break;
-        }
-        case 2:{
-            document.getElementById("notifications_adv"+profileId).classList.toggle("show");
-            document.getElementById("notifications_adv"+profileId).classList.remove("text-danger");
-            document.getElementById("notifications_adv"+profileId).classList.add("text-warning");
-            document.getElementById("notifications_adv_text"+profileId).innerText = "You can enable/disable phone and email notifications separately";
-            break;
-        }
-        case 3:{
-            document.getElementById("notifications_adv"+profileId).classList.toggle("show");
-            document.getElementById("notifications_adv"+profileId).classList.remove("text-danger");
-            document.getElementById("notifications_adv"+profileId).classList.add("text-warning");
-            document.getElementById("notifications_adv_text"+profileId).innerText = "You can enable/disable phone and email notifications separately";
-            break;
-        }
-        default:{
-            console.log("ADV OPTION "+count+" ERROR: "+document.getElementById("notifications_adv"+profileId));
-            break;
+function showAdv(profileId, role){
+    const adv = document.getElementById("notifications_adv"+profileId)
+    adv.classList.add("show");
+    adv.classList.remove("text-secondary", "text-warning", "text-danger");
+    if(role){
+        adv.classList.add("text-secondary");
+        adv.innerHTML = `<i class="fas fa-info mr-3"></i><b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;
+    } else {
+        let count = 0;
+        document.getElementById("profile"+profileId).childNodes[1].childNodes.forEach(li => {if(li.firstChild.classList.contains("text-primary")) count++;});
+        if(count === 0){
+            adv.classList.add("text-danger");
+            adv.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>You need to turn on notifications first</b>`;
+        } else if(count <= 3){
+            adv.classList.add("text-warning");
+            adv.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>You can enable/disable phone and email notifications separately</b>`;
+        } else {
+            adv.classList.add("text-danger");
+            adv.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>ADV OPTION `+count+` ERROR: `+document.getElementById("notifications_adv"+profileId)`</b>`;
         }
     }
 }
@@ -529,7 +498,7 @@ function profileAccuracy(profileId){
     return container;
 }
 
-function familyListItem(profile){
+function familyListItem(loggedProfile, profile){
     const img = document.createElement("img");
     img.setAttribute("id", "family_list_"+profile.id);
     img.setAttribute("class", "avatar-overlay img-respinsive col-sm-6 col-md-6 col-lg-2 mb-4");
@@ -537,25 +506,13 @@ function familyListItem(profile){
     img.setAttribute("data-toggle", "modal");
     img.setAttribute("data-target", "#family_modal");
     img.addEventListener("click", () => {
-        document.getElementById("container").appendChild(createFamilyModal(profile));
+        document.getElementById("container").appendChild(createFamilyModal(loggedProfile, profile));
     });
     return img;
 }
 
-function createInfoModal(text){
-    const modal = document.createElement("div");modal.setAttribute("id", "info_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalInfoLabel");modal.setAttribute("aria-hidden", "true");
-    let element = document.createElement("div");element.setAttribute("class", "modal-dialog modal-md");element.setAttribute("role", "document");modal.appendChild(element);
-    let div = document.createElement("div");div.setAttribute("class", "modal-content");element.appendChild(div);
-    let section = document.createElement("div");section.setAttribute("class", "modal-header");div.appendChild(section);
-    element = document.createElement("h5");element.setAttribute("id", "info_title");element.setAttribute("class", "modal-title title");element.innerHTML = `<i class="fa fa-info mr-3"></i>Role badges`;section.appendChild(element);
-    element = document.createElement("button");element.setAttribute("class", "close");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("aria-label", "Close");element.innerHTML = `<span aria-hidden="true">&times;</span>`;section.appendChild(element);
-    section = document.createElement("div");section.setAttribute("class", "modal-body mb-0 p-0");div.appendChild(section);
-    element = document.createElement("p");element.setAttribute("id", "info_text");element.setAttribute("class", "text-secondary p-2 m-2");element.innerText = text;section.appendChild(element);
-    return modal;
-}
-
-function createFamilyModal(profile){
-    const modal = document.createElement("div");modal.setAttribute("id", "family_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalFamilyLabel");modal.setAttribute("aria-hidden", "true");
+function createFamilyModal(loggedProfile, profile){
+    let modal;if(document.getElementById("family_modal")){modal = document.getElementById("family_modal");modal.innerHTML=``}else{modal = document.createElement("div")};modal.setAttribute("id", "family_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalFamilyLabel");modal.setAttribute("aria-hidden", "true");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
     const content = document.createElement("div");content.setAttribute("class", "modal-content");doc.appendChild(content);
     // modal header
@@ -565,12 +522,15 @@ function createFamilyModal(profile){
     // modal body
     const body = document.createElement("div");body.setAttribute("class", "modal-body");content.appendChild(body);
     let div = document.createElement("div");div.setAttribute("class", "p-2 m-2");body.appendChild(div);
-    element = document.createElement("div");element.setAttribute("class", "row align-items-center justify-content-start p-1 m-1");div.appendChild(element);
-    element.appendChild(createProfile(profile, true));
+    div.appendChild(createProfile(loggedProfile, profile));
     div.appendChild(profileAccuracy(profile.profileId));
     // modal footer
     const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-between");content.appendChild(footer);
-    element = document.createElement("button");element.setAttribute("id", "family_edit");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-edit mr-2"></i>Edit this profile`;element.onclick = function(){document.getElementById("container").removeChild(document.getElementById("family_modal"));};footer.appendChild(element);
+    element = document.createElement("button");element.setAttribute("id", "family_edit");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-edit mr-2"></i>Edit this profile`;
+    element.onclick = function(){
+        document.getElementById("container").removeChild(document.getElementById("family_modal"));
+        document.getElementById("container").appendChild(createEditModal(loggedProfile, profile));};
+    footer.appendChild(element);
     return modal;
 }
 

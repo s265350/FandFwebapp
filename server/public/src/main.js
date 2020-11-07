@@ -7,7 +7,7 @@ window.addEventListener('load', () => {
     /* LOGIN */
     document.getElementById("sideHome").addEventListener("click", () => {Navigation.loadHome();});
     document.getElementById("sideRecognize").addEventListener("click", () => {Navigation.loadRecognize();});
-    document.getElementById("sideProfile").addEventListener("click", () => {Navigation.loadProfile(new Profile("firstName1234567890", "firstName", "lastName", "1234567890", "firstName@lastName.com", "Admin", "Father", true, true, false, "svg/avatar.svg"));});
+    document.getElementById("sideProfile").addEventListener("click", () => {Navigation.loadProfile(new Profile("firstNameDad", "lastNameDad", "1234567890", "dad@lastName.com", "Admin", "Father", true, true, false, "svg/avatar.svg"));});
     document.getElementById("sideAboutUs").addEventListener("click", () => {Navigation.loadAboutUs();});
     Navigation.loadHome();
     const video = document.getElementById("webcam");

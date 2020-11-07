@@ -1,8 +1,8 @@
 'use strict';
 
 class Profile {
-    constructor(profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar){
-        this.profileId = profileId;
+    constructor(firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar){
+        this.profileId = firstName+phone;
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;
