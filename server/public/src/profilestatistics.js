@@ -1,11 +1,10 @@
 'use strict';
 
 class ProfileStatisctics {
-    constructor(profileId, faces, recognized, unrecognized){
-        this.porfileId = porfileId;
+    constructor(profileId, faces, recognized){
+        this.profileId = profileId;
         this.faces = faces;
         this.recognized = recognized;
-        this.unrecognized = unrecognized;
     }
 
     static from (json) {

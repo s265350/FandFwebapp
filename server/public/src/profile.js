@@ -9,9 +9,9 @@ class Profile {
         this.email = email;
         this.system = system;
         this.family = family;
-        this.notifications = notifications;
-        this.notificationsPhone = notificationsPhone;
-        this.notificationsEmail = notificationsEmail;
+        if(notifications === 0) this.notifications = false; else this.notifications = true;
+        if(notificationsPhone === 0) this.notificationsPhone = false; else this.notificationsPhone = true;
+        if(notificationsEmail === 0) this.notificationsEmail = false; else this.notificationsEmail = true;
         this.avatar = avatar;
     }
 
