@@ -74,7 +74,8 @@ app.post('/profiles', [], (req, res) => {
         family: req.body.family,
         notifications: req.body.notifications,
         notificationsPhone: req.body.notificationsPhone,
-        notificationsEmail: req.body.notificationsEmail
+        notificationsEmail: req.body.notificationsEmail,
+        avatar: req.body.avatar
     }).then( () => res.end() )
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });

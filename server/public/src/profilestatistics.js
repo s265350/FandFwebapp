@@ -6,9 +6,8 @@ class ProfileStatisctics {
         this.faces = faces;
         this.recognized = recognized;
     }
-
     static from (json) {
-        // returns an exam obj from a json one
+        // returns a ProfileStatisctics obj from a json one
         return Object.assign(new ProfileStatisctics(), json);
     }
 }

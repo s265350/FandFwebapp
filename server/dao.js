@@ -20,9 +20,9 @@ exports.getProfiles = function() {
                 email : row.email,
                 system : row.system,
                 family : row.family,
-                notifications : row.notifications,
-                notificationsPhone : row.notificationsPhone,
-                notificationsEmail : row.notificationsEmail,
+                notifications : !!row.notifications,
+                notificationsPhone : !!row.notificationsPhone,
+                notificationsEmail : !!row.notificationsEmail,
                 avatar : row.avatar
             }));
             resolve(profiles);
@@ -56,9 +56,9 @@ exports.getProfileById = function(id) {
                     email : row.email,
                     system : row.system,
                     family : row.family,
-                    notifications : row.notifications,
-                    notificationsPhone : row.notificationsPhone,
-                    notificationsEmail : row.notificationsEmail,
+                    notifications: !!row.notifications,
+                    notificationsPhone: !!row.notificationsPhone,
+                    notificationsEmail: !!row.notificationsEmail,
                     avatar : row.avatar
                 };
                 resolve(profile);
@@ -82,9 +82,9 @@ exports.getAdminProfile = function() {
                     email : row.email,
                     system : row.system,
                     family : row.family,
-                    notifications : row.notifications,
-                    notificationsPhone : row.notificationsPhone,
-                    notificationsEmail : row.notificationsEmail,
+                    notifications: !!row.notifications,
+                    notificationsPhone: !!row.notificationsPhone,
+                    notificationsEmail: !!row.notificationsEmail,
                     avatar : row.avatar
                 };
                 resolve(profile);
@@ -120,7 +120,6 @@ exports.getProfileStatisticsById = function(profileId) {
 
 /* POST */
 exports.createProfile = function(profile) {
-    console.log(profile);
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail) VALUES(?,?,?,?,?,?,?,?,?,?)';
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
@@ -145,7 +144,6 @@ exports.createProfileStatistics = function(profileStatistics) {
 exports.updateProfile = function(profile){
     return new Promise( (resolve, reject) => {
         const sql = 'UPDATE profiles SET profileId = ?, firstName = ?, lastName = ?, phone = ?, email = ?, system = ?, family = ?, notifications = ?, notificationsPhone = ?, notificationsEmail = ?, avatar = ? WHERE profileId = ?';
-        console.log(profile);
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar, profile.profileId], (err) => {
             if(err) reject(err);
             resolve(null);
