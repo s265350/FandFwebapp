@@ -230,10 +230,10 @@ function createEditModal(){
     const form_row =  document.createElement("div");form_row.setAttribute("class", "form-row");form.appendChild(form_row);
     div =  document.createElement("div");div.setAttribute("class", "col-md-5 col-lg-4");form_row.appendChild(div);
     let group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
-    element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive m-2");element.setAttribute("src", "svg/avatar.svg");group.appendChild(element);
+    element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive col-12 m-2");element.setAttribute("src", "svg/avatar.svg");group.appendChild(element);
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     let input = document.createElement("div");input.setAttribute("class", "custom-file");group.appendChild(input);
-    element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.appendChild(element);
+    element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("name", "avatar");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.appendChild(element);
     element = document.createElement("label");element.setAttribute("class", "custom-file-label");element.setAttribute("for", "edit_upload");element.innerHTML = `<i class="fa fa-image mr-2"></i>Upload photo`;input.appendChild(element);
     div =  document.createElement("div");div.setAttribute("class", "col-md-7 col-lg-8");form_row.appendChild(div);
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
@@ -348,6 +348,31 @@ function populateEditModal(loggedProfile, profile){
     document.getElementById("edit_save").addEventListener("click", () => {submitEditModal(loggedProfile, update);});
     //TODO: capture file
     const file = document.getElementById("edit_upload");
+    file.addEventListener('change', readFile, false);
+}
+
+function readFile(){
+    // file checks
+    if (this.files && this.files[0]) {
+        // file type
+        if (!this.files[0].type.match(/image.*/)) {
+            document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");
+            document.getElementById("edit_notification_adv").classList.add("show", "text-danger");
+            document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Only images are allowed</b>`;
+            return;
+        }
+        // file size
+        const size = 500;
+        if (this.files[0].size > (size*2048)) {
+            document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");
+            document.getElementById("edit_notification_adv").classList.add("show", "text-danger");
+            document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Max allowed image size is ${size}KB</b>`;
+            return;
+        }
+    } else return;
+    let FR = new FileReader();
+    FR.onload = function(e) {document.getElementById("edit_avatar").setAttribute("src", e.target.result);};
+    FR.readAsDataURL(this.files[0]);
 }
 
 function clearEditModal(){
@@ -368,16 +393,20 @@ function clearEditModal(){
 
 async function submitEditModal(loggedProfile, update){
     if(document.getElementById("edit_firstname").classList.contains("border-warning") || document.getElementById("edit_phone").classList.contains("border-warning") || document.getElementById("edit_system").classList.contains("border-warning")){
-        document.getElementById("edit_notification_adv").classList.remove("text-warning");
+        document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");
         document.getElementById("edit_notification_adv").classList.add("show", "text-danger");
         document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
     } else {
+        let directory = document.getElementById("edit_avatar").getAttribute("src");
+        if(document.getElementById('edit_upload').files[0])
+            directory = await Api.uploadNewAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value} ${document.getElementById("edit_lastname").value}`);
+        console.log(directory);
         const newProfile = new Profile(
             document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
             document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
             document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
             document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-            document.getElementById("edit_avatar").getAttribute("src")
+            directory
         );
         document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
         document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)newProfile.family = child.innerText;});

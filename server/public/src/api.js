@@ -91,6 +91,16 @@ async function newProfileStatistics(profileStatistics) {
     });
 }
 
+async function uploadNewAvatarImage(file, name){
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('avatar', file);
+    fetch('/newavatar', {method: 'POST', body: formData}
+        ).then(response => response.json()
+        ).then(data => { return data.directory; }
+        ).catch(error => {});
+}
+
 /* PUT */
 async function updateProfile(profile) {
     return new Promise( (resolve, reject) => {
@@ -126,4 +136,4 @@ async function updateProfileStatistics(profileStatistics) {
     });
 }
 
-export {getAllProfiles, getAllProfilesId, getProfileById, getAdminProfile, getAllStatistics, getProfileStatisticsById, newProfile, newProfileStatistics, updateProfile, updateProfileStatistics};
+export {getAllProfiles, getAllProfilesId, getProfileById, getAdminProfile, getAllStatistics, getProfileStatisticsById, newProfile, newProfileStatistics, uploadNewAvatarImage, updateProfile, updateProfileStatistics};
