@@ -40,6 +40,13 @@ app.get('/profiles/:profileId', (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
+// GET /avatars/<profileId> 
+app.get('/avatars/:profileId', (req, res) => {
+  dao.getAvatarById(req.params.profileId)
+    .then( (res) => res.blob() )
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
 // GET /adminprofile 
 app.get('/adminprofile', (req, res) => {
   dao.getAdminProfile()
@@ -98,8 +105,8 @@ app.post('/statistics', [], (req, res) => {
 app.post('/newavatar', [], (req, res) => {
   if(!req.files || Object.keys(req.files).length === 0) res.status(400).end('No files were uploaded.');
   const image = req.files.avatar;
-  const directory = `${__dirname}/faces/${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
-  image.mv(directory, (error) => {
+  const directory = `/faces/${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
+  image.mv(__dirname+directory, (error) => {
     if (error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
       res.end(JSON.stringify({ status: 'error', message: error }));

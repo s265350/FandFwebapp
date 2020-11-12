@@ -398,9 +398,10 @@ async function submitEditModal(loggedProfile, update){
         document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
     } else {
         let directory = document.getElementById("edit_avatar").getAttribute("src");
-        if(document.getElementById('edit_upload').files[0])
+        if(document.getElementById('edit_upload').files[0]){
             directory = await Api.uploadNewAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value} ${document.getElementById("edit_lastname").value}`);
-        console.log(directory);
+            directory = directory.directory;
+        }
         const newProfile = new Profile(
             document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
             document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
@@ -469,13 +470,14 @@ function populateProfile(loggedProfile, profile){
     profileTitle.innerHTML = `<i class="fa fa-user mr-3"></i>${profile.firstName} ${profile.lastName}`;
     notificationsPhoneText.innerText = profile.phone;
     if(profile.email == "") notificationsEmail.setAttribute("display", "none"); else notificationsEmailText.innerText = profile.email;
-    if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning");}
+    if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning", (notificationsMain.getAttribute("id").split("_")[0] === "family"));}
     if(profile.notificationsPhone){notificationsPhone.classList.replace("text-secondary", "text-primary");notificationsPhone.firstChild.classList.replace("fa-phone-slash", "fa-phone");}
     if(profile.notificationsEmail){notificationsEmail.classList.replace("text-secondary", "text-primary");notificationsEmail.firstChild.classList.replace("fa-envelope-open", "fa-envelope");}
     profileSystem.innerText = profile.system;
     if(profile.family == "") profileFamily.setAttribute("style", "visibility: hidden"); else profileFamily.innerText = profile.family;
     // listeners
     notificationsMain.addEventListener("click", () => {
+        const modal = notificationsMain.getAttribute("id").split("_")[0] === "family";
         if(notificationsMain.firstChild.classList.contains("fa-bell")){
             notificationsMain.classList.replace("text-primary", "text-secondary");
             notificationsMain.firstChild.classList.replace("fa-bell", "fa-bell-slash");
@@ -485,7 +487,7 @@ function populateProfile(loggedProfile, profile){
                 notificationsEmail.classList.replace("text-primary", "text-secondary");
                 notificationsEmail.firstChild.classList.replace("fa-envelope", "fa-envelope-open");
             }
-            showAdv("warning", (loggedProfile.profileId != profile.profileId));
+            showAdv("warning", modal);
         } else {
             notificationsMain.classList.replace("text-secondary", "text-primary");
             notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");
@@ -499,12 +501,13 @@ function populateProfile(loggedProfile, profile){
         const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
             !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
         Api.updateProfile(newProfile);
-        if(loggedProfile.profileId != profile.profileId) loggedProfile = newProfile;
-        profile = newProfile;
-        showAdv("warning", (loggedProfile.profileId != profile.profileId));
+        showAdv("warning", modal);
+        if(modal) profile = newProfile; else loggedProfile = newProfile;
     });
     notificationsPhone.addEventListener("click", () => {
-        if(notificationsMain.firstChild.classList.contains("fa-bell-slash")) showAdv("danger", (loggedProfile.profileId != profile.profileId));
+        const modal = notificationsPhone.getAttribute("id").split("_")[0] === "family";
+        if(notificationsMain.firstChild.classList.contains("fa-bell-slash"))
+            showAdv("danger", modal);
         else {
             if(notificationsPhone.firstChild.classList.contains("fa-phone-slash")){
                 notificationsPhone.classList.replace("text-secondary", "text-primary");
@@ -516,13 +519,14 @@ function populateProfile(loggedProfile, profile){
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             Api.updateProfile(newProfile);
-            if(loggedProfile.profileId != profile.profileId) loggedProfile = newProfile;
-            profile = newProfile;
-            showAdv("warning", (loggedProfile.profileId != profile.profileId));
+            showAdv("warning", modal);
+            if(modal) profile = newProfile; else loggedProfile = newProfile;
         }
     });
     notificationsEmail.addEventListener("click", () => {
-        if(notificationsMain.firstChild.classList.contains("fa-bell-slash")) showAdv("danger"), (loggedProfile.profileId != profile.profileId);
+        const modal = notificationsEmail.getAttribute("id").split("_")[0] === "family";
+        if(notificationsMain.firstChild.classList.contains("fa-bell-slash"))
+            showAdv("danger", modal);
         else {
             if(notificationsEmail.firstChild.classList.contains("fa-envelope-open")){
                 notificationsEmail.classList.replace("text-secondary", "text-primary");
@@ -534,14 +538,13 @@ function populateProfile(loggedProfile, profile){
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             Api.updateProfile(newProfile);
-            if(loggedProfile.profileId != profile.profileId) loggedProfile = newProfile;
-            profile = newProfile;
-            showAdv("warning", (loggedProfile.profileId != profile.profileId));
+            showAdv("warning", modal);
+            if(modal) profile = newProfile; else loggedProfile = newProfile;
         }
     });
     notificationsAdv.addEventListener("click", () => {notificationsAdv.classList.toggle("show");});
-    profileSystem.addEventListener("click", () => {showAdv("info", (loggedProfile.profileId != profile.profileId));});
-    profileFamily.addEventListener("click", () => {showAdv("info", (loggedProfile.profileId != profile.profileId));});
+    profileSystem.addEventListener("click", () => {showAdv("info", (profileSystem.getAttribute("id").split("_")[0] === "family"));});
+    profileFamily.addEventListener("click", () => {showAdv("info", (profileFamily.getAttribute("id").split("_")[0] === "family"));});
 }
 
 function showAdv(message, modal){
@@ -589,16 +592,18 @@ async function populateProfileAccuracy(profileId, modal){
     let id = "profile_";
     if(modal) id = "family_";
     const profileStatistics = await Api.getProfileStatisticsById(profileId);
+    if(profileStatistics.faces === 0) profileStatistics.faces = 1;
     const value = parseFloat(100 * profileStatistics.recognized / profileStatistics.faces).toFixed(2);
     const progressbar = document.getElementById(`${id}progressbar`);
-    progressbar.setAttribute("style", `text-align: left;width: ${value}%`);
+    progressbar.setAttribute("aria-valuenow", value);
+    progressbar.innerText = `${value}%`;
     if(value > 80){progressbar.classList.add("bg-primary");}
     else if(value > 60){progressbar.classList.add("bg-success");}
     else if(value > 40){progressbar.classList.add("bg-info");}
     else if(value > 20){progressbar.classList.add("bg-warning");}
     else {progressbar.classList.add("bg-danger");}
-    progressbar.setAttribute("aria-valuenow", value);
-    progressbar.innerText = `${value}%`;
+    if(value < 5) progressbar.setAttribute("style", `text-align: left;width: 5%`);
+    else progressbar.setAttribute("style", `text-align: left;width: ${value}%`);
 }
 
 function familyListItem(loggedProfile, profile){
@@ -637,7 +642,5 @@ async function populateFamilyModal(loggedProfile, profile){
     await populateProfileAccuracy(profile.profileId, true);
     document.getElementById("family_edit").addEventListener("click", () => {populateEditModal(loggedProfile, profile);});
 }
-
-//async function submitFamilyModal(loggedProfile, update){}
 
 export {loadHome, loadRecognize, loadProfile, loadAboutUs};

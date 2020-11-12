@@ -29,6 +29,16 @@ async function getProfileById(profileId) {
         throw `ERROR fetching /profiles/${profileId}`;
 }
 
+async function getProfileAvatar(profileId) {
+    const response = await fetch(`/avatars/${profileId}`);
+    if(response.ok){
+        const formData = new FormData();
+        formData.append('avatar', response);
+        return formData;
+    } else
+        throw `ERROR fetching /avatars/${profileId}`;
+}
+
 async function getAdminProfile() {
     const response = await fetch(`/adminprofile`);
     if(response.ok){
@@ -95,10 +105,18 @@ async function uploadNewAvatarImage(file, name){
     const formData = new FormData();
     formData.append('name', name);
     formData.append('avatar', file);
-    fetch('/newavatar', {method: 'POST', body: formData}
-        ).then(response => response.json()
-        ).then(data => { return data.directory; }
-        ).catch(error => {});
+    return new Promise( (resolve, reject) => {
+        fetch('/newavatar', {method: 'POST', body: formData})
+        .then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+    });
+    
 }
 
 /* PUT */
@@ -136,4 +154,4 @@ async function updateProfileStatistics(profileStatistics) {
     });
 }
 
-export {getAllProfiles, getAllProfilesId, getProfileById, getAdminProfile, getAllStatistics, getProfileStatisticsById, newProfile, newProfileStatistics, uploadNewAvatarImage, updateProfile, updateProfileStatistics};
+export {getAllProfiles, getAllProfilesId, getProfileById, getProfileAvatar, getAdminProfile, getAllStatistics, getProfileStatisticsById, newProfile, newProfileStatistics, uploadNewAvatarImage, updateProfile, updateProfileStatistics};

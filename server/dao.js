@@ -67,6 +67,30 @@ exports.getProfileById = function(id) {
     });
 };
 
+exports.getAvatarById = function(id) {
+    return new Promise( (resolve, reject) => {
+        const sql = 'SELECT * FROM profiles WHERE profileId = ?';
+        db.get(sql, [id], (err, row) => {
+            if (err) {reject(err);return;}
+            if (row == undefined || Array.isArray(row)) {resolve({});
+            } else {
+                const formData = new FormData();
+                formData.append('avatar', row.avatar);
+                resolve(formData);
+            }
+        });
+    });
+}
+exports.getAvatarById = function(id) {
+    return new Promise( (resolve, reject) => {
+    const sql = 'SELECT * FROM profiles WHERE profileId = ?';
+        db.all(sql, [id], (err, row) => {
+            if (err) {reject(err);return;}
+            resolve(row.avatar);
+        });
+    });
+};
+
 exports.getAdminProfile = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM profiles WHERE system = ?';
