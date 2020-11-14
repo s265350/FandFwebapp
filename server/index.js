@@ -69,9 +69,16 @@ app.get('/statistics/:profileId', (req, res) => {
 
 // GET /profile/strangers
 app.get('/faces/strangers', (req, res) => {
-  fs.readdir(`${__dirname}/public/faces/strangers`, (err, files) => {
-    if (err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
-    res.json(files);
+  fs.readdir(`${__dirname}/public/faces/strangers`, (err, names) => {
+    if(err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
+    const ext = ["jpg", "jpeg", "png", "svg"];
+    names = names.filter(function(name){return !name.includes("DS_Store");})
+    names = names.map(name => {
+      if(ext.includes(name.split(".")[name.split(".").length-1])){return `/faces/strangers/${name}`;}
+      else{res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})}
+    });
+    console.log(names);
+    res.json(names);
   });
 });
 

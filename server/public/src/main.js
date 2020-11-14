@@ -46,13 +46,8 @@ async function loadRecognize(){
     // modals
     container.appendChild(createRecognizeModal());
     container.appendChild(createEditModal());
-    const extensions = ["jpg", "jpeg", "png", "svg"];
     const strangers = await Api.getStrangers();
-    strangers.forEach(stranger => {
-        if(extensions.includes(stranger.split(".")[stranger.split(".").length-1])) {
-            list.appendChild(recognizeListItem(loggedProfile, `/faces/strangers/${stranger}`));
-        }
-    });
+    strangers.forEach(stranger => {list.appendChild(recognizeListItem(loggedProfile, stranger));});
 }
 
 async function loadProfile(){
@@ -193,6 +188,7 @@ async function submitRecognizeModal(loggedProfile, imgPath){
         profileStatistics.faces++;
         profileStatistics.unrecognized++;
         await Api.updateProfileStatistics(profileStatistics);
+        //TODO: move image to faces directory
         await Api.deleteImage(imgPath.split("/")[3]);
         loadRecognize(loggedProfile);
     }
@@ -205,7 +201,7 @@ function profileListItem(profile){
     card.addEventListener("click", () => {
         card.classList.toggle("border-primary");
         card.classList.toggle("selected");
-        document.querySelector("#selection").childNodes.forEach(card => {if(card.getAttribute("id") !== `select_${profile.profileId}`){card.classList.remove("selected");}});
+        document.querySelector("#selection").childNodes.forEach(card => {if(card.getAttribute("id") !== `select_${profile.profileId}`){card.classList.remove("selected", "border-primary");}});
         document.getElementById("recognize_save").innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;
         document.querySelector("#selection").childNodes.forEach(card => {if(card.classList.contains("selected")){document.getElementById("recognize_save").innerHTML = `<i class="fa fa-save mr-2"></i>Save`;}});
     });
@@ -422,6 +418,7 @@ async function submitEditModal(loggedProfile, update){
         } else {
             await Api.newProfile(newProfile);
             await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
+            await Api.deleteImage(imgName);
             loadRecognize(loggedProfile);
         };
     }

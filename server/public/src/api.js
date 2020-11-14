@@ -59,7 +59,8 @@ async function getProfileStatisticsById(profileId) {
 async function getStrangers(){
     const response = await fetch(`/faces/strangers`);
     if(response.ok){
-        return await response.json();
+        const res = await response.json();
+        return res;
     } else
         throw `ERROR fetching /profile/strangers`;
 }
@@ -169,9 +170,9 @@ async function updateProfileStatistics(profileStatistics) {
 }
 
 /* DELETE */
-async function deleteImage(imgPath){
+async function deleteImage(imgName){
     return new Promise( (resolve, reject) => {
-        fetch(`/public/faces/strangers/${imgPath}`, {
+        fetch(`/public/faces/strangers/${imgName}`, {
             method: 'DELETE',
         }).then( (response) => {
             if(response.ok) resolve(null);
