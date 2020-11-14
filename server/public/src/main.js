@@ -50,7 +50,7 @@ async function loadRecognize(){
     const strangers = await Api.getStrangers();
     strangers.forEach(stranger => {
         if(extensions.includes(stranger.split(".")[stranger.split(".").length-1])) {
-            list.appendChild(recognizeListItem(loggedProfile, `/faces/unknown/${stranger}`));
+            list.appendChild(recognizeListItem(loggedProfile, `/faces/strangers/${stranger}`));
         }
     });
 }
@@ -211,7 +211,7 @@ function profileListItem(profile){
     });
     const img = document.createElement("img");
     img.setAttribute("class", "card-img");
-    img.setAttribute("src", profile.avatar);
+    img.setAttribute("src", `/faces/${profile.avatar}`);
     card.appendChild(img);
     return card;
 }
@@ -332,7 +332,7 @@ function populateEditModal(loggedProfile, profile){
         document.getElementById("edit_avatar").setAttribute("src", profile);
     } else {
         document.getElementById("edit_title").innerHTML = `<i class="fa fa-edit mr-2"></i>Edit profile`;
-        document.getElementById("edit_avatar").setAttribute("src", profile.avatar);
+        document.getElementById("edit_avatar").setAttribute("src", `/faces/${profile.avatar}`);
         document.getElementById("edit_firstname").value = profile.firstName;
         document.getElementById("edit_firstname").classList.replace("border-warning", "border-success");
         document.getElementById("edit_lastname").value = profile.lastName;
@@ -473,7 +473,7 @@ function populateProfile(loggedProfile, profile){
     else{prodileAvatar.setAttribute("class", `col-md-4 col-lg-3 mb-2`);}
     // fill fields
     profileTitle.innerHTML = `<i class="fa fa-user mr-3"></i>${profile.firstName} ${profile.lastName}`;
-    document.getElementById(`${id}_image`).setAttribute("src", profile.avatar);
+    document.getElementById(`${id}_image`).setAttribute("src", `/faces/${profile.avatar}`);
     notificationsPhoneText.innerText = profile.phone;
     if(profile.email == "") notificationsEmail.setAttribute("display", "none"); else notificationsEmailText.innerText = profile.email;
     if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning", notificationsMain.getAttribute("id").split("_")[0]);}
@@ -618,7 +618,7 @@ function familyListItem(loggedProfile, profile){
     const img = document.createElement("img");
     img.setAttribute("id", `family_list_item_${profile.profileId}`);
     img.setAttribute("class", "card-img");
-    img.setAttribute("src", profile.avatar);
+    img.setAttribute("src", `/faces/${profile.avatar}`);
     card.appendChild(img);
     return card;
 }

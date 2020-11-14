@@ -57,23 +57,11 @@ async function getProfileStatisticsById(profileId) {
 }
 
 async function getStrangers(){
-    const response = await fetch(`/profile/strangers`);
+    const response = await fetch(`/faces/strangers`);
     if(response.ok){
         return await response.json();
     } else
         throw `ERROR fetching /profile/strangers`;
-}
-
-async function getAvatar(profile){
-    const response = await fetch(`/faces/avatar/${profile.avatar}`);
-    if(response.ok){
-        console.log(response);
-        console.log(response.body.image);
-        const formData = new FormData();
-        formData.append("image", response.body.image);
-        return formData;
-    } else
-        throw `ERROR fetching /faces/avatar/${profile.avatar}`;
 }
 
 /* POST */
@@ -133,7 +121,7 @@ async function moveImage(path, name){
     formData.append('path', path);
     formData.append('name', `${name}.${path.split(".")[1]}`);
     return new Promise( (resolve, reject) => {
-        fetch(`/public/faces/unknown`, {method: 'POST', body: formData})
+        fetch(`/public/faces/strangers`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {
@@ -183,7 +171,7 @@ async function updateProfileStatistics(profileStatistics) {
 /* DELETE */
 async function deleteImage(imgPath){
     return new Promise( (resolve, reject) => {
-        fetch(`/public/faces/unknown/${imgPath}`, {
+        fetch(`/public/faces/strangers/${imgPath}`, {
             method: 'DELETE',
         }).then( (response) => {
             if(response.ok) resolve(null);
@@ -204,7 +192,6 @@ export {
     getAllStatistics, 
     getProfileStatisticsById, 
     getStrangers, 
-    getAvatar, 
     newProfile, 
     newProfileStatistics, 
     uploadNewAvatarImage, 

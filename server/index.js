@@ -67,21 +67,11 @@ app.get('/statistics/:profileId', (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// GET /face/strangers
+// GET /profile/strangers
 app.get('/faces/strangers', (req, res) => {
-  fs.readdir(`${__dirname}/faces/strangers`, (err, files) => {
+  fs.readdir(`${__dirname}/public/faces/strangers`, (err, files) => {
     if (err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
     res.json(files);
-  });
-});
-
-// GET /faces/avatar/<firstName+lastName>
-app.get('/faces/avatar/:name', (req, res) => {
-  if(!req.params.name) res.status(400).end();
-  fs.readFile(`${__dirname}/faces/${req.params.name}`, (err, image) => {
-    if (err) throw err; // Fail if the file can't be read.
-    res.writeHead(200, {'Content-Type': 'image/*'});
-    res.end(image); // Send the file data to the browser.
   });
 });
 
@@ -135,9 +125,9 @@ app.post('/public/faces', [], (req, res) => {
 });
 
 // POST unrecognized image
-app.post('/public/faces/unknown', [], (req, res) => {
+app.post('/public/faces/strangers', [], (req, res) => {
   if(!req.body.path || !req.body.name) res.status(400).end();
-  const oldPath = `${__dirname}/public/faces/unknown/${req.body.path}`;
+  const oldPath = `${__dirname}/public/faces/strangers/${req.body.path}`;
   const newPath = `${__dirname}/public/faces/${req.body.name}`;
   fs.copyFile(oldPath, newPath, (err) => {
     if(err) res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
@@ -164,10 +154,10 @@ app.put('/statistics/:profileId', (req, res) => {
 });
 
 // DELETE /public/<imgPath>
-app.delete(`/public/faces/unknown/:imgPath`, (req, res) => {
+app.delete(`/public/faces/strangers/:imgPath`, (req, res) => {
   if(!req.params.imgPath) res.status(400).end();
   console.log(req.params.imgPath);
-  fs.unlink(`${__dirname}/public/faces/unknown/${req.params.imgPath}`, (err) => {
+  fs.unlink(`${__dirname}/public/faces/strangers/${req.params.imgPath}`, (err) => {
     if(err) {console.log(err);res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
   });
