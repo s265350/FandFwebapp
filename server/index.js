@@ -2,14 +2,13 @@
 
 /* Required External Modules */
 const express = require("express");
-const sqlite = require("sqlite3");
 const fileupload = require('express-fileupload');
+const fs = require('fs');
 const dao = require('./dao.js');
 
 /* App Variables */
 const app = express();
 const port = process.env.PORT || "8000";
-const db = new sqlite.Database('database.db', (err) => {if(err) throw err;});
 
 // Process body content
 app.use(express.json(),fileupload());
@@ -47,8 +46,8 @@ app.get('/avatars/:profileId', (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// GET /adminprofile 
-app.get('/adminprofile', (req, res) => {
+// GET /profile/admin 
+app.get('/profile/admin', (req, res) => {
   dao.getAdminProfile()
     .then( (profile) => res.json(profile) )
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
@@ -68,10 +67,28 @@ app.get('/statistics/:profileId', (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
+// GET /face/strangers
+app.get('/faces/strangers', (req, res) => {
+  fs.readdir(`${__dirname}/faces/strangers`, (err, files) => {
+    if (err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
+    res.json(files);
+  });
+});
+
+// GET /faces/avatar/<firstName+lastName>
+app.get('/faces/avatar/:name', (req, res) => {
+  if(!req.params.name) res.status(400).end();
+  fs.readFile(`${__dirname}/faces/${req.params.name}`, (err, image) => {
+    if (err) throw err; // Fail if the file can't be read.
+    res.writeHead(200, {'Content-Type': 'image/*'});
+    res.end(image); // Send the file data to the browser.
+  });
+});
+
 // POST /profiles
 // Request body: object describing a Profile { profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail }
 app.post('/profiles', [], (req, res) => {
-  if(!req.body.profileId) res.status(400).end();
+  if(!req.body.profileId || !req.body.firstName || !req.body.phone || !req.body.system) res.status(400).end();
   dao.createProfile({
       profileId: req.body.profileId,
       firstName: req.body.firstName,
@@ -84,7 +101,7 @@ app.post('/profiles', [], (req, res) => {
       notificationsPhone: req.body.notificationsPhone,
       notificationsEmail: req.body.notificationsEmail,
       avatar: req.body.avatar
-  }).then( () => res.end() )
+  }).then( () => res.status(200).end() )
   .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -95,17 +112,17 @@ app.post('/statistics', [], (req, res) => {
   dao.createProfileStatistics({
       profileId: req.body.profileId,
       faces: req.body.faces,
-      recognized: req.body.recognized
-  }).then( () => res.end() )
+      unrecognized: req.body.unrecognized
+  }).then( () => res.status(200).end() )
   .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // POST images
 // Request body: image file and name 
-app.post('/newavatar', [], (req, res) => {
+app.post('/public/faces', [], (req, res) => {
   if(!req.files || Object.keys(req.files).length === 0) res.status(400).end('No files were uploaded.');
   const image = req.files.avatar;
-  const directory = `/faces/${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
+  const directory = `/public/faces/${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
   image.mv(__dirname+directory, (error) => {
     if (error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
@@ -117,22 +134,43 @@ app.post('/newavatar', [], (req, res) => {
   });
 });
 
+// POST unrecognized image
+app.post('/public/faces/unknown', [], (req, res) => {
+  if(!req.body.path || !req.body.name) res.status(400).end();
+  const oldPath = `${__dirname}/public/faces/unknown/${req.body.path}`;
+  const newPath = `${__dirname}/public/faces/${req.body.name}`;
+  fs.copyFile(oldPath, newPath, (err) => {
+    if(err) res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
+    res.status(200).end();
+  });
+});
+
 // PUT profile
 // Request body: object describing a Profile { profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail }
 app.put('/profiles/:profileId', (req, res) => {
-  if(!req.body.profileId) res.status(400).end();
+  if(!req.params.profileId) res.status(400).end();
   dao.updateProfile(req.body)
       .then( (result) => res.status(200).end() )
       .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // PUT statistics
-// Request body: object describing a ProfileStatistics { profileId, faces, recognized }
+// Request body: object describing a ProfileStatistics { profileId, faces, unrecognized }
 app.put('/statistics/:profileId', (req, res) => {
-  if(!req.body.profileId) res.status(400).end();
+  if(!req.params.profileId) res.status(400).end();
   dao.updateProfileStatistics(req.body)
       .then( (result) => res.status(200).end() )
       .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// DELETE /public/<imgPath>
+app.delete(`/public/faces/unknown/:imgPath`, (req, res) => {
+  if(!req.params.imgPath) res.status(400).end();
+  console.log(req.params.imgPath);
+  fs.unlink(`${__dirname}/public/faces/unknown/${req.params.imgPath}`, (err) => {
+    if(err) {console.log(err);res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
+    res.status(200).end();
+  });
 });
 
 /* Server Activation */

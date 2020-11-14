@@ -42,12 +42,17 @@ async function loadRecognize(){
     const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
     const title = document.createElement("p");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-question mr-3"></i>I don't recognize those faces`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
-    const list = document.createElement("div");list.setAttribute("id", "recognize_list");list.setAttribute("class", "row align-items-center justify-content-start");container.appendChild(list);
+    const list = document.createElement("div");list.setAttribute("id", "recognize_list");list.setAttribute("class", "card-columns");container.appendChild(list);
     // modals
     container.appendChild(createRecognizeModal());
     container.appendChild(createEditModal());
-    //TODO: db call to fill list
-    list.appendChild(recognizeListItem(loggedProfile, "svg/avatar.svg"));
+    const extensions = ["jpg", "jpeg", "png", "svg"];
+    const strangers = await Api.getStrangers();
+    strangers.forEach(stranger => {
+        if(extensions.includes(stranger.split(".")[stranger.split(".").length-1])) {
+            list.appendChild(recognizeListItem(loggedProfile, `/faces/unknown/${stranger}`));
+        }
+    });
 }
 
 async function loadProfile(){
@@ -64,14 +69,14 @@ async function loadProfile(){
     const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
     let title = document.createElement("p");title.setAttribute("id", "profile_title");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-user mr-3"></i>FirstName LastName`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
-    container.appendChild(createProfile(false));
+    container.appendChild(createProfile("profile"));
     populateProfile(loggedProfile, loggedProfile);
-    container.appendChild(createProfileAccuracy(false));
-    await populateProfileAccuracy(loggedProfile.profileId, false);
+    container.appendChild(createProfileAccuracy("profile"));
+    await populateProfileAccuracy(loggedProfile.profileId, "profile");
     // family
     title = document.createElement("p");title.setAttribute("class", "subtitle text-dark pt-4");title.innerHTML = `<i class="fa fa-home mr-2"></i>Family`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
-    const list = document.createElement("div");list.setAttribute("class", "row align-items-center justify-content-start");container.appendChild(list);
+    const list = document.createElement("div");list.setAttribute("class", "card-columns");container.appendChild(list);
     const profiles = await Api.getAllProfiles();
     profiles.forEach(profile => {if(loggedProfile.profileId !== profile.profileId)list.appendChild(familyListItem(loggedProfile, profile));});
     // modals
@@ -122,14 +127,16 @@ async function loadAboutUs(){
 }
 
 function recognizeListItem(loggedProfile, imgPath){
+    const card = document.createElement("div");
+    card.setAttribute("class", "card avatar-overlay overflow-hidden");
+    card.setAttribute("data-toggle", "modal");
+    card.setAttribute("data-target", "#recognize_modal");
+    card.addEventListener("click", () => {populateRecognizeModal(loggedProfile, imgPath);});
     const img = document.createElement("img");
-    img.setAttribute("id", `recognize_${imgPath}`);
-    img.setAttribute("class", "avatar-overlay img-respinsive col-sm-4 col-md-3 col-lg-3 mb-4");
+    img.setAttribute("class", "card-img");
     img.setAttribute("src", imgPath);
-    img.setAttribute("data-toggle", "modal");
-    img.setAttribute("data-target", "#recognize_modal");
-    img.addEventListener("click", () => {populateRecognizeModal(loggedProfile, imgPath);});
-    return img;
+    card.appendChild(img);
+    return card;
 }
 
 function createRecognizeModal(){
@@ -144,10 +151,10 @@ function createRecognizeModal(){
     const body = document.createElement("div");body.setAttribute("class", "modal-body");content.appendChild(body);
     const div = document.createElement("div");div.setAttribute("class", "p-2 m-2");body.appendChild(div);
     let row = document.createElement("div");row.setAttribute("class", "row justify-content-center m-1");div.appendChild(row);
-    element = document.createElement("img");element.setAttribute("id", "recognize_avatar");element.setAttribute("class", "col-md-4 col-lg-5 img-respinsive mb-2");element.setAttribute("src", "svg/avatar.svg");row.appendChild(element);
+    element = document.createElement("img");element.setAttribute("id", "recognize_avatar");element.setAttribute("class", "col-md-4 col-lg-5 img-respinsive mb-2");row.appendChild(element);
     element = document.createElement("p");element.setAttribute("class", "subtitle text-dark pt-4");element.innerText = `Select`;div.appendChild(element);
     div.appendChild(document.createElement("hr"));
-    const selection = document.createElement("div");selection.setAttribute("id", "selection");selection.setAttribute("class", "row justify-content-start m-1");div.appendChild(selection);
+    const selection = document.createElement("div");selection.setAttribute("id", "selection");selection.setAttribute("class", "card-columns");div.appendChild(selection);
     // modal footer
     const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-between");content.appendChild(footer);
     element = document.createElement("button");element.setAttribute("id", "recognize_save");element.setAttribute("type", "button");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-target", "#recognize_modal");element.innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;footer.appendChild(element);
@@ -163,55 +170,50 @@ async function populateRecognizeModal(loggedProfile, imgPath){
     profiles.forEach(profile => {document.getElementById("selection").appendChild(profileListItem(profile));});
     // save button
     document.getElementById("recognize_save").addEventListener("click", () => {
-        submitRecognizeModal(loggedProfile);
+        submitRecognizeModal(loggedProfile, imgPath);
+        clearRecognizeModal();
     });
     // new profile button
     document.getElementById("recognize_new").addEventListener("click", () => {
         populateEditModal(loggedProfile, imgPath);
+        clearRecognizeModal();
     });
 }
 
 function clearRecognizeModal(){
-    document.getElementById("recognize_avatar").setAttribute("src", "svg/avatar.svg");
     document.getElementById("selection").innerHTML = ``;
+    document.getElementById("recognize_save").innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;
 }
 
-async function submitRecognizeModal(loggedProfile){
-    //TODO: db call delete image from recognize list
-    let image = undefined;
-    document.getElementById("selection").childNodes.forEach(div => {if(div.firstChild.classList.contains("selected")){image = div;}});
-    if(image){
-        const profileStatistics = await Api.getProfileStatisticsById(image.getAttribute("id").split("_")[1]);
+async function submitRecognizeModal(loggedProfile, imgPath){
+    let profileId = undefined;
+    document.getElementById("selection").childNodes.forEach(card => {if(card.classList.contains("selected")){profileId = card.getAttribute("id").split("_")[1];}});
+    if(profileId){
+        const profileStatistics = await Api.getProfileStatisticsById(profileId);
         profileStatistics.faces++;
-        const result = await Api.updateProfileStatistics(profileStatistics);
+        profileStatistics.unrecognized++;
+        await Api.updateProfileStatistics(profileStatistics);
+        await Api.deleteImage(imgPath.split("/")[3]);
         loadRecognize(loggedProfile);
     }
 }
 
 function profileListItem(profile){
-    const container = document.createElement("div");
-    container.setAttribute("id", `select_${profile.profileId}`);
-    container.setAttribute("class", "col-md-3 col-lg-4 mb-4");
-    let img = document.createElement("img");
-    img.setAttribute("class", "avatar-overlay img-respinsive border-primary");
-    //TODO: img.setAttribute("src", profile.avatar);
-    img.setAttribute("src", "svg/avatar.svg");
-    img.addEventListener("click", () => {
-        img.classList.toggle("selected");
-        document.querySelector("#selection").childNodes.forEach(div => {
-            if(div.getAttribute("id") !== `select_${profile.profileId}`){
-                div.firstChild.classList.remove("selected");
-            }
-        });
+    const card = document.createElement("div");
+    card.setAttribute("id", `select_${profile.profileId}`);
+    card.setAttribute("class", "card avatar-overlay overflow-hidden");
+    card.addEventListener("click", () => {
+        card.classList.toggle("border-primary");
+        card.classList.toggle("selected");
+        document.querySelector("#selection").childNodes.forEach(card => {if(card.getAttribute("id") !== `select_${profile.profileId}`){card.classList.remove("selected");}});
         document.getElementById("recognize_save").innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;
-        document.querySelector("#selection").childNodes.forEach(div => {
-            if(div.firstChild.classList.contains("selected")){
-                document.getElementById("recognize_save").innerHTML = `<i class="fa fa-save mr-2"></i>Save`;
-            }
-        });
+        document.querySelector("#selection").childNodes.forEach(card => {if(card.classList.contains("selected")){document.getElementById("recognize_save").innerHTML = `<i class="fa fa-save mr-2"></i>Save`;}});
     });
-    container.appendChild(img);
-    return container;
+    const img = document.createElement("img");
+    img.setAttribute("class", "card-img");
+    img.setAttribute("src", profile.avatar);
+    card.appendChild(img);
+    return card;
 }
 
 function createEditModal(){
@@ -233,7 +235,7 @@ function createEditModal(){
     element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive col-12 m-2");element.setAttribute("src", "svg/avatar.svg");group.appendChild(element);
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     let input = document.createElement("div");input.setAttribute("class", "custom-file");group.appendChild(input);
-    element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("name", "avatar");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.appendChild(element);
+    element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("name", "avatar");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.setAttribute("accept", ".png, .jpg, .jpeg, .svg");input.appendChild(element);
     element = document.createElement("label");element.setAttribute("class", "custom-file-label");element.setAttribute("for", "edit_upload");element.innerHTML = `<i class="fa fa-image mr-2"></i>Upload photo`;input.appendChild(element);
     div =  document.createElement("div");div.setAttribute("class", "col-md-7 col-lg-8");form_row.appendChild(div);
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
@@ -311,7 +313,7 @@ function createEditModal(){
     element = document.createElement("option");element.setAttribute("value", "6");element.innerText = `Female Friend`;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "7");element.innerText = `Other`;group.appendChild(element);
     div = document.createElement("div");div.setAttribute("class", "col-12");form.appendChild(div);
-    const span = document.createElement("span");span.setAttribute("id", "edit_notification_adv");span.setAttribute("class", "notification-adv text-warning show");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
+    const span = document.createElement("span");span.setAttribute("id", "edit_notification_adv");span.setAttribute("class", "notification-adv text-warning");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
     span.addEventListener("click", () => {
         document.getElementById("edit_notification_adv").classList.remove("show", "text-danger", "text-secondary");
         document.getElementById("edit_notification_adv").classList.add("text-warning");
@@ -324,29 +326,28 @@ function createEditModal(){
 }
 
 function populateEditModal(loggedProfile, profile){
-    let update = true;
-    if (typeof profile === 'string' || profile instanceof String){
+    let update = (typeof profile === 'string' || profile instanceof String);
+    if (update){
         document.getElementById("edit_title").innerHTML = `<i class="fa fa-user-plus mr-2"></i>Create new profile`;
         document.getElementById("edit_avatar").setAttribute("src", profile);
-        update = false;
     } else {
         document.getElementById("edit_title").innerHTML = `<i class="fa fa-edit mr-2"></i>Edit profile`;
-        document.getElementById("edit_avatar").setAttribute("src", "svg/avatar.svg");
-        //document.getElementById("edit_avatar").setAttribute("src", profile.avatar);
+        document.getElementById("edit_avatar").setAttribute("src", profile.avatar);
         document.getElementById("edit_firstname").value = profile.firstName;
         document.getElementById("edit_firstname").classList.replace("border-warning", "border-success");
         document.getElementById("edit_lastname").value = profile.lastName;
         document.getElementById("edit_phone").value = profile.phone;
         document.getElementById("edit_phone").classList.replace("border-warning", "border-success");
         if(profile.notificationsPhone){document.getElementById("edit_phonebutton").classList.replace("fa-bell-slash", "fa-bell");}
+        else {document.getElementById("edit_phonebutton").classList.replace("fa-bell", "fa-bell-slash");}
         document.getElementById("edit_mail").value = profile.email;
-        if(profile.notificationsEmail){document.getElementById("edit_mailbutton").classList.replace("fa-bell-slash", "fa-bell");}
+        if(profile.email != "" && profile.notificationsEmail){document.getElementById("edit_mailbutton").classList.replace("fa-bell-slash", "fa-bell");}
+        else {document.getElementById("edit_mailbutton").classList.replace("fa-bell", "fa-bell-slash");}
         document.getElementById("edit_system").childNodes.forEach(child => {if(child.innerText === profile.system)document.getElementById("edit_system").value = child.value;});
         document.getElementById("edit_system").classList.replace("border-warning", "border-success");
         document.getElementById("edit_family").childNodes.forEach(child => {if(child.innerText === profile.family)document.getElementById("edit_family").value = child.value;});
     }
-    document.getElementById("edit_save").addEventListener("click", () => {submitEditModal(loggedProfile, update);});
-    //TODO: capture file
+    document.getElementById("edit_save").addEventListener("click", () => {submitEditModal(loggedProfile, !update);});
     const file = document.getElementById("edit_upload");
     file.addEventListener('change', readFile, false);
 }
@@ -358,7 +359,7 @@ function readFile(){
         if (!this.files[0].type.match(/image.*/)) {
             document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");
             document.getElementById("edit_notification_adv").classList.add("show", "text-danger");
-            document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Only images are allowed</b>`;
+            document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Only jpg, pgn and png images are allowed</b>`;
             return;
         }
         // file size
@@ -389,6 +390,7 @@ function clearEditModal(){
     document.getElementById("edit_system").value = 0;
     document.getElementById("edit_system").classList.replace("border-success", "border-warning");
     document.getElementById("edit_family").value = 0;
+    document.getElementById("edit_notification_adv").classList.remove("show");
 }
 
 async function submitEditModal(loggedProfile, update){
@@ -399,8 +401,10 @@ async function submitEditModal(loggedProfile, update){
     } else {
         let directory = document.getElementById("edit_avatar").getAttribute("src");
         if(document.getElementById('edit_upload').files[0]){
-            directory = await Api.uploadNewAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value} ${document.getElementById("edit_lastname").value}`);
+            directory = await Api.uploadNewAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value}${document.getElementById("edit_lastname").value}`);
             directory = directory.directory;
+        } else {
+            directory = await Api.moveImage(directory, `${document.getElementById("edit_firstname").value}${document.getElementById("edit_lastname").value}`);
         }
         const newProfile = new Profile(
             document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
@@ -415,62 +419,64 @@ async function submitEditModal(loggedProfile, update){
         if(update){
             await Api.updateProfile(newProfile);
             loadProfile(loggedProfile);
-        }
-        else{
+        } else {
             await Api.newProfile(newProfile);
+            await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
             loadRecognize(loggedProfile);
         };
     }
 }
 
-function createProfile(modal){
-    const profile = document.createElement("div");if(modal){profile.setAttribute("id", "family");}else{profile.setAttribute("id", "profile");}
-    profile.setAttribute("class", "row align-items-center justify-content-start");
-    let div = document.createElement("div");if(modal){div.setAttribute("id", "family_avatar");}else{div.setAttribute("id", "profile_avatar");}div.setAttribute("class", "avatar-overlay col-md-4 col-lg-3 mb-2");profile.appendChild(div);
-    let element = document.createElement("img");if(modal){element.setAttribute("id", "family_image");}else{element.setAttribute("id", "profile_image");}element.setAttribute("class", "img-rounded img-respinsive");element.setAttribute("src", "svg/avatar.svg");div.appendChild(element);
+function createProfile(id){
+    const profile = document.createElement("div");profile.setAttribute("id", id);profile.setAttribute("class", "row align-items-center justify-content-start");
+    let div = document.createElement("div");div.setAttribute("id", `${id}_avatar`);div.setAttribute("class", "card overflow-hidden col-md-4 col-lg-3 avatar");profile.appendChild(div);
+    let element = document.createElement("img");element.setAttribute("id", `${id}_image`);element.setAttribute("class", "card-img img-responsive");div.appendChild(element);
     div = document.createElement("ul");div.setAttribute("class", "col-md-8 col-lg-9 justify-content-start");profile.appendChild(div);
     element = document.createElement("li");div.appendChild(element);
-    let span = document.createElement("span");if(modal){span.setAttribute("id", "family_notifications_main");}else{span.setAttribute("id", "profile_notifications_main");}span.setAttribute("class", "notification notification-main mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-bell-slash mr-3"></i>`;element.appendChild(span);
-    element = document.createElement("b");if(modal){element.setAttribute("id", "family_notifications_main_text");}else{element.setAttribute("id", "profile_notifications_main_text");}element.innerText = `Notifications`;span.appendChild(element);
+    let span = document.createElement("span");span.setAttribute("id", `${id}_notifications_main`);span.setAttribute("class", "notification notification-main mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-bell-slash mr-3"></i>`;element.appendChild(span);
+    element = document.createElement("b");element.setAttribute("id", `${id}_notifications_main_text`);element.innerText = `Notifications`;span.appendChild(element);
     element = document.createElement("li");div.appendChild(element);
-    span = document.createElement("span");if(modal){span.setAttribute("id", "family_notifications_phone");}else{span.setAttribute("id", "profile_notifications_phone");}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-phone-slash mr-3"></i>`;element.appendChild(span);
-    element = document.createElement("b");if(modal){element.setAttribute("id", "family_notifications_phone_text");}else{element.setAttribute("id", "profile_notifications_phone_text");}element.innerText = `Phone`;span.appendChild(element);
+    span = document.createElement("span");span.setAttribute("id", `${id}_notifications_phone`);span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-phone-slash mr-3"></i>`;element.appendChild(span);
+    element = document.createElement("b");element.setAttribute("id", `${id}_notifications_phone_text`);element.innerText = `Phone`;span.appendChild(element);
     element = document.createElement("li");div.appendChild(element);
-    span = document.createElement("span");if(modal){span.setAttribute("id", "family_notifications_email");}else{span.setAttribute("id", "profile_notifications_email");}span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-envelope-open mr-3"></i>`;element.appendChild(span);
-    element = document.createElement("b");if(modal){element.setAttribute("id", "family_notifications_email_text");}else{element.setAttribute("id", "profile_notifications_email_text");}element.innerText = `Email`;span.appendChild(element);
+    span = document.createElement("span");span.setAttribute("id", `${id}_notifications_email`);span.setAttribute("class", "notification mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-envelope-open mr-3"></i>`;element.appendChild(span);
+    element = document.createElement("b");element.setAttribute("id", `${id}_notifications_email_text`);element.innerText = `Email`;span.appendChild(element);
     element = document.createElement("li");div.appendChild(element);
-    span = document.createElement("span");if(modal){span.setAttribute("id", "family_notifications_adv");}else{span.setAttribute("id", "profile_notifications_adv");}span.setAttribute("class", "notification-adv text-danger");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>You can enable/disable phone and email notifications separately</b>`;element.appendChild(span);
-    element = document.createElement("b");if(modal){element.setAttribute("id", "family_notifications_adv_text");}else{element.setAttribute("id", "profile_notifications_adv_text");}element.innerText = `ADV`;span.appendChild(element);
+    span = document.createElement("span");span.setAttribute("id", `${id}_notifications_adv`);span.setAttribute("class", "notification-adv text-danger");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>You can enable/disable phone and email notifications separately</b>`;element.appendChild(span);
+    element = document.createElement("b");element.setAttribute("id", `${id}_notifications_adv_text`);element.innerText = `ADV`;span.appendChild(element);
     element = document.createElement("li");element.setAttribute("class", "mt-2");div.appendChild(element);
-    span = document.createElement("button");if(modal){span.setAttribute("id", "family_system");}else{span.setAttribute("id", "profile_system");}span.setAttribute("class", "btn btn-secondary btn-rounded");span.innerText = `System role`;element.appendChild(span);
-    span = document.createElement("button");if(modal){span.setAttribute("id", "family_family");}else{span.setAttribute("id", "profile_family");}span.setAttribute("class", "btn btn-info btn-rounded btn-md ml-3");span.innerText = `Family role`;element.appendChild(span);
+    span = document.createElement("button");span.setAttribute("id", `${id}_system`);span.setAttribute("class", "btn btn-secondary btn-rounded");span.innerText = `System role`;element.appendChild(span);
+    span = document.createElement("button");span.setAttribute("id", `${id}_family`);span.setAttribute("class", "btn btn-info btn-rounded btn-md ml-3");span.innerText = `Family role`;element.appendChild(span);
     return profile;
 }
 
 function populateProfile(loggedProfile, profile){
+    let id = "profile"
+    if(loggedProfile.profileId != profile.profileId) id = "family";
     // elements
-    let id = "profile_";
-    if(loggedProfile.profileId != profile.profileId) id = "family_";
-    let profileTitle = document.getElementById(`${id}title`);
-    const profileAvatar = document.getElementById(`${id}avatar`);
-    const notificationsMain = document.getElementById(`${id}notifications_main`);
-    const notificationsMainText = document.getElementById(`${id}notifications_main_text`);
-    const notificationsPhone = document.getElementById(`${id}notifications_phone`);
-    const notificationsPhoneText = document.getElementById(`${id}notifications_phone_text`);
-    const notificationsEmail = document.getElementById(`${id}notifications_email`);
-    const notificationsEmailText = document.getElementById(`${id}notifications_email_text`);
-    const notificationsAdv = document.getElementById(`${id}notifications_adv`);
-    const notificationsAdvText = document.getElementById(`${id}notifications_adv_text`);
-    const profileSystem = document.getElementById(`${id}system`);
-    const profileFamily = document.getElementById(`${id}family`);
-    // if profile is inside a modal
-    if(loggedProfile.profileId != profile.profileId){profileAvatar.setAttribute("class", `avatar col-md-4 col-lg-3 mb-2`);}
-    else {const editButton = document.createElement("span");editButton.setAttribute("class", "overlay text-primary");editButton.setAttribute("data-toggle", "modal");editButton.setAttribute("data-target", "#edit_modal");editButton.innerHTML = `<i class="fa fa-edit mr-2"></i>`;editButton.addEventListener("click", () => {populateEditModal(loggedProfile, profile)});profileAvatar.appendChild(editButton);}
+    const profileTitle = document.getElementById(`${id}_title`);
+    const prodileAvatar = document.getElementById(`${id}_avatar`);
+    const notificationsMain = document.getElementById(`${id}_notifications_main`);
+    const notificationsPhone = document.getElementById(`${id}_notifications_phone`);
+    const notificationsPhoneText = document.getElementById(`${id}_notifications_phone_text`);
+    const notificationsEmail = document.getElementById(`${id}_notifications_email`);
+    const notificationsEmailText = document.getElementById(`${id}_notifications_email_text`);
+    const notificationsAdv = document.getElementById(`${id}_notifications_adv`);
+    const profileSystem = document.getElementById(`${id}_system`);
+    const profileFamily = document.getElementById(`${id}_family`);
+    // if profile is inside a modal/
+    if(id === "profile"){loggedProfile
+        prodileAvatar.setAttribute("data-toggle", "modal");
+        prodileAvatar.setAttribute("data-target", "#edit_modal");
+        prodileAvatar.addEventListener("click", () => {populateEditModal(loggedProfile, loggedProfile)});
+        const editButton = document.createElement("span");editButton.setAttribute("class", "text-primary");editButton.setAttribute("data-toggle", "modal");editButton.setAttribute("data-target", "#edit_modal");editButton.innerHTML = `<i class="fa fa-edit mr-2"></i>`;editButton.addEventListener("click", () => {populateEditModal(loggedProfile, profile)});prodileAvatar.appendChild(editButton);}
+    else{prodileAvatar.setAttribute("class", `col-md-4 col-lg-3 mb-2`);}
     // fill fields
     profileTitle.innerHTML = `<i class="fa fa-user mr-3"></i>${profile.firstName} ${profile.lastName}`;
+    document.getElementById(`${id}_image`).setAttribute("src", profile.avatar);
     notificationsPhoneText.innerText = profile.phone;
     if(profile.email == "") notificationsEmail.setAttribute("display", "none"); else notificationsEmailText.innerText = profile.email;
-    if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning", (notificationsMain.getAttribute("id").split("_")[0] === "family"));}
+    if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning", notificationsMain.getAttribute("id").split("_")[0]);}
     if(profile.notificationsPhone){notificationsPhone.classList.replace("text-secondary", "text-primary");notificationsPhone.firstChild.classList.replace("fa-phone-slash", "fa-phone");}
     if(profile.notificationsEmail){notificationsEmail.classList.replace("text-secondary", "text-primary");notificationsEmail.firstChild.classList.replace("fa-envelope-open", "fa-envelope");}
     profileSystem.innerText = profile.system;
@@ -487,7 +493,7 @@ function populateProfile(loggedProfile, profile){
                 notificationsEmail.classList.replace("text-primary", "text-secondary");
                 notificationsEmail.firstChild.classList.replace("fa-envelope", "fa-envelope-open");
             }
-            showAdv("warning", modal);
+            showAdv("warning", id);
         } else {
             notificationsMain.classList.replace("text-secondary", "text-primary");
             notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");
@@ -501,13 +507,13 @@ function populateProfile(loggedProfile, profile){
         const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
             !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
         Api.updateProfile(newProfile);
-        showAdv("warning", modal);
-        if(modal) profile = newProfile; else loggedProfile = newProfile;
+        showAdv("warning", id);
+        if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
     });
     notificationsPhone.addEventListener("click", () => {
         const modal = notificationsPhone.getAttribute("id").split("_")[0] === "family";
         if(notificationsMain.firstChild.classList.contains("fa-bell-slash"))
-            showAdv("danger", modal);
+            showAdv("danger", id);
         else {
             if(notificationsPhone.firstChild.classList.contains("fa-phone-slash")){
                 notificationsPhone.classList.replace("text-secondary", "text-primary");
@@ -519,14 +525,14 @@ function populateProfile(loggedProfile, profile){
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             Api.updateProfile(newProfile);
-            showAdv("warning", modal);
-            if(modal) profile = newProfile; else loggedProfile = newProfile;
+            showAdv("warning", id);
+            if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
         }
     });
     notificationsEmail.addEventListener("click", () => {
         const modal = notificationsEmail.getAttribute("id").split("_")[0] === "family";
         if(notificationsMain.firstChild.classList.contains("fa-bell-slash"))
-            showAdv("danger", modal);
+            showAdv("danger", id);
         else {
             if(notificationsEmail.firstChild.classList.contains("fa-envelope-open")){
                 notificationsEmail.classList.replace("text-secondary", "text-primary");
@@ -538,19 +544,17 @@ function populateProfile(loggedProfile, profile){
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             Api.updateProfile(newProfile);
-            showAdv("warning", modal);
-            if(modal) profile = newProfile; else loggedProfile = newProfile;
+            showAdv("warning", id);
+            if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
         }
     });
     notificationsAdv.addEventListener("click", () => {notificationsAdv.classList.toggle("show");});
-    profileSystem.addEventListener("click", () => {showAdv("info", (profileSystem.getAttribute("id").split("_")[0] === "family"));});
-    profileFamily.addEventListener("click", () => {showAdv("info", (profileFamily.getAttribute("id").split("_")[0] === "family"));});
+    profileSystem.addEventListener("click", () => {showAdv("info", profileSystem.getAttribute("id").split("_")[0]);});
+    profileFamily.addEventListener("click", () => {showAdv("info", profileFamily.getAttribute("id").split("_")[0]);});
 }
 
-function showAdv(message, modal){
-    let id = "profile_";
-    if(modal) id = "family_";
-    const adv = document.getElementById(`${id}notifications_adv`);
+function showAdv(message, id){
+    const adv = document.getElementById(`${id}_notifications_adv`);
     adv.classList.remove("text-secondary", "text-warning", "text-danger");
     adv.classList.toggle("show");
     switch(message){
@@ -577,44 +581,46 @@ function showAdv(message, modal){
     }
 }
 
-function createProfileAccuracy(modal){
-    const container = document.createElement("div");if(modal){container.setAttribute("id", "family_accuracy");}else{container.setAttribute("id", "profile_accuracy");}container.setAttribute("class", "row align-items-center justify-content-around pt-2");
+function createProfileAccuracy(id){
+    const container = document.createElement("div");container.setAttribute("id", `${id}_accuracy`);container.setAttribute("class", "row align-items-center justify-content-around pt-2");
     let div = document.createElement("span");div.setAttribute("class", "col-12 text-secondary");container.appendChild(div);
     let element = document.createElement("b");element.innerText = `Algorithm performance`;div.appendChild(element);
     element = document.createElement("div");element.setAttribute("class", "col-12");container.appendChild(element);
     div = document.createElement("div");div.setAttribute("class", "progress");div.setAttribute("style", "height: 2em;");element.appendChild(div);
-    element = document.createElement("div");if(modal){element.setAttribute("id", `family_progressbar`);}else{element.setAttribute("id", `profile_progressbar`);}element.setAttribute("class", "progress-bar p-1");element.setAttribute("role", "progressbar");element.setAttribute("aria-valuemin", "0");element.setAttribute("aria-valuemax", "100");
+    element = document.createElement("div");element.setAttribute("id", `${id}_progressbar`);element.setAttribute("class", "progress-bar p-1");element.setAttribute("role", "progressbar");element.setAttribute("aria-valuemin", "0");element.setAttribute("aria-valuemax", "100");
     div.appendChild(element);
     return container;
 }
 
-async function populateProfileAccuracy(profileId, modal){
-    let id = "profile_";
-    if(modal) id = "family_";
+async function populateProfileAccuracy(profileId, id){
     const profileStatistics = await Api.getProfileStatisticsById(profileId);
     if(profileStatistics.faces === 0) profileStatistics.faces = 1;
-    const value = parseFloat(100 * profileStatistics.recognized / profileStatistics.faces).toFixed(2);
-    const progressbar = document.getElementById(`${id}progressbar`);
+    const value = parseFloat(100 * (profileStatistics.faces - profileStatistics.unrecognized) / profileStatistics.faces).toFixed(2);
+    const progressbar = document.getElementById(`${id}_progressbar`);
     progressbar.setAttribute("aria-valuenow", value);
     progressbar.innerText = `${value}%`;
     if(value > 80){progressbar.classList.add("bg-primary");}
     else if(value > 60){progressbar.classList.add("bg-success");}
     else if(value > 40){progressbar.classList.add("bg-info");}
     else if(value > 20){progressbar.classList.add("bg-warning");}
-    else {progressbar.classList.add("bg-danger");}
-    if(value < 5) progressbar.setAttribute("style", `text-align: left;width: 5%`);
+    else if(value <= 20){progressbar.classList.add("bg-danger");}
+    if(value < 5 || isNaN(value)) progressbar.setAttribute("style", `text-align: left;width: 5%`);
     else progressbar.setAttribute("style", `text-align: left;width: ${value}%`);
 }
 
 function familyListItem(loggedProfile, profile){
+    const card = document.createElement("div");
+    card.setAttribute("id", `select_${profile.profileId}`);
+    card.setAttribute("class", "card avatar-overlay overflow-hidden");
+    card.setAttribute("data-toggle", "modal");
+    card.setAttribute("data-target", "#family_modal");
+    card.addEventListener("click", () => {populateFamilyModal(loggedProfile, profile);});
     const img = document.createElement("img");
     img.setAttribute("id", `family_list_item_${profile.profileId}`);
-    img.setAttribute("class", "avatar-overlay img-respinsive col-sm-6 col-md-6 col-lg-2 mb-4");
+    img.setAttribute("class", "card-img");
     img.setAttribute("src", profile.avatar);
-    img.setAttribute("data-toggle", "modal");
-    img.setAttribute("data-target", "#family_modal");
-    img.addEventListener("click", () => {populateFamilyModal(loggedProfile, profile);});
-    return img;
+    card.appendChild(img);
+    return card;
 }
 
 function createFamilyModal(){
@@ -628,8 +634,8 @@ function createFamilyModal(){
     // modal body
     const body = document.createElement("div");body.setAttribute("class", "modal-body");content.appendChild(body);
     let div = document.createElement("div");div.setAttribute("class", "p-2 m-2");body.appendChild(div);
-    div.appendChild(createProfile(true));
-    div.appendChild(createProfileAccuracy(true));
+    div.appendChild(createProfile("family"));
+    div.appendChild(createProfileAccuracy("family"));
     // modal footer
     const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-between");content.appendChild(footer);
     element = document.createElement("button");element.setAttribute("id", "family_edit");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("data-toggle", "modal");element.setAttribute("data-target", "#edit_modal");element.innerHTML = `<i class="fa fa-edit mr-2"></i>Edit this profile`;footer.appendChild(element);
@@ -639,7 +645,7 @@ function createFamilyModal(){
 async function populateFamilyModal(loggedProfile, profile){
     document.getElementById("family_title").innerHTML = `<i class="fa fa-user mr-2"></i>${profile.firstName} ${profile.lastName}`;
     await populateProfile(loggedProfile, profile);
-    await populateProfileAccuracy(profile.profileId, true);
+    await populateProfileAccuracy(profile.profileId, "family");
     document.getElementById("family_edit").addEventListener("click", () => {populateEditModal(loggedProfile, profile);});
 }
 
