@@ -100,7 +100,7 @@ async function newProfileStatistics(profileStatistics) {
     });
 }
 
-async function uploadNewAvatarImage(file, name){
+async function uploadAvatarImage(file, name){
     const formData = new FormData();
     formData.append('name', name);
     formData.append('avatar', file);
@@ -117,14 +117,14 @@ async function uploadNewAvatarImage(file, name){
     });
 }
 
-async function moveImage(filename, name){
+async function uploadStrangerImage(filename, name){
     const formData = new FormData();
-    formData.append('path', `/public/faces/strangers/${filename}`);
+    formData.append('path', filename);
     formData.append('name', `${name}.${filename.split(".")[1]}`);
-    return new Promise( (resolve, reject) => {
+    const copy = new Promise( (resolve, reject) => {
         fetch(`/public/faces/strangers`, {method: 'POST', body: formData})
         .then( (response) => {
-            if(response.ok) resolve(response.json());
+            if(response.ok) resolve(null);
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
@@ -210,8 +210,8 @@ export {
     getStrangers, 
     newProfile, 
     newProfileStatistics, 
-    uploadNewAvatarImage, 
-    moveImage, 
+    uploadAvatarImage, 
+    uploadStrangerImage, 
     updateProfile, 
     updateProfileStatistics, 
     deleteAvatar, 

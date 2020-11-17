@@ -130,14 +130,17 @@ app.post('/public/faces', [], (req, res) => {
   });
 });
 
-// POST unrecognized image
+// POST copy stranger image
 app.post('/public/faces/strangers', [], (req, res) => {
   if(!req.body.path || !req.body.name) res.status(400).end();
   const oldPath = `${__dirname}/public/faces/strangers/${req.body.path}`;
   const newPath = `${__dirname}/public/faces/${req.body.name}`;
-  fs.copyFile(oldPath, newPath, (err) => {
-    if(err) res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
-    res.status(200).end();
+  fs.readFile(oldPath, (err, data) => {
+      if (err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
+      fs.writeFile(newPath, data, (err) => {
+          if (err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
+          res.status(200).end();
+      });
   });
 });
 

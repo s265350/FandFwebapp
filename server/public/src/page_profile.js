@@ -185,25 +185,25 @@ async function submitEditModal(profile){
         document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
         return;
     }
-    let avatar = document.getElementById("edit_avatar").getAttribute("src").split("/")[document.getElementById("edit_avatar").getAttribute("src").split("/").length-1];
-    if(document.getElementById('edit_upload').files[0]){
-        avatar = await Api.uploadNewAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`);
-        avatar = avatar.directory;
-        if(updateProfile) await Api.deleteAvatar(profile.avatar);
-    } else {
-        if(updateProfile) avatar = profile.avatar;
-        else {
-            //TODO: avatar = await Api.moveImage(avatar, `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`);
-            await Api.deleteStranger(avatar);
-        }
-    }    
     const newProfile = new Profile(
         document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
         document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
         document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-        document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-        avatar
+        document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),""
     );
+    newProfile.avatar = document.getElementById("edit_avatar").getAttribute("src").split("/")[document.getElementById("edit_avatar").getAttribute("src").split("/").length-1];
+    if(document.getElementById('edit_upload').files[0]){
+        newProfile.avatar = await Api.uploadAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`);
+        newProfile.avatar = newProfile.avatar.directory;
+        if(updateProfile) await Api.deleteAvatar(profile.avatar);
+        else await Api.deleteAvatar(profile);
+    } else {
+        if(updateProfile) newProfile.avatar = profile.avatar;
+        else {
+            await Api.uploadStrangerImage(newProfile.avatar, `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`);
+            await Api.deleteStranger(profile.split("/")[profile.split("/").length-1]);
+        }
+    }
     document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
     document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)newProfile.family = child.innerText;});
     $("#edit_modal").modal("toggle");
