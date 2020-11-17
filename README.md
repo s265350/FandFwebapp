@@ -7,3 +7,7 @@ Il sistema verrà testato tramite webcam, utilizzando le nostre foto come membri
 Il nostro obiettivo è quello di raggiungere almeno il 50% di riuscita, anche se vorremmo ottenere un risultato ottimale riuscendo ad avere il 70/80% di riuscita.
 
 To start the server open terminal and in server folder run: npm run dev
+
+TODO:
+- video management
+- library integration
