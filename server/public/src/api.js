@@ -117,10 +117,10 @@ async function uploadNewAvatarImage(file, name){
     });
 }
 
-async function moveImage(path, name){
+async function moveImage(filename, name){
     const formData = new FormData();
-    formData.append('path', path);
-    formData.append('name', `${name}.${path.split(".")[1]}`);
+    formData.append('path', `/public/faces/strangers/${filename}`);
+    formData.append('name', `${name}.${filename.split(".")[1]}`);
     return new Promise( (resolve, reject) => {
         fetch(`/public/faces/strangers`, {method: 'POST', body: formData})
         .then( (response) => {
@@ -170,7 +170,22 @@ async function updateProfileStatistics(profileStatistics) {
 }
 
 /* DELETE */
-async function deleteImage(imgName){
+async function deleteAvatar(imgName){
+    return new Promise( (resolve, reject) => {
+        fetch(`/public/faces/${imgName}`, {
+            method: 'DELETE',
+        }).then( (response) => {
+            if(response.ok) resolve(null);
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+async function deleteStranger(imgName){
     return new Promise( (resolve, reject) => {
         fetch(`/public/faces/strangers/${imgName}`, {
             method: 'DELETE',
@@ -199,5 +214,6 @@ export {
     moveImage, 
     updateProfile, 
     updateProfileStatistics, 
-    deleteImage
+    deleteAvatar, 
+    deleteStranger
 };

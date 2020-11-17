@@ -77,7 +77,6 @@ app.get('/faces/strangers', (req, res) => {
       if(ext.includes(name.split(".")[name.split(".").length-1])){return `/faces/strangers/${name}`;}
       else{res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})}
     });
-    console.log(names);
     res.json(names);
   });
 });
@@ -119,15 +118,15 @@ app.post('/statistics', [], (req, res) => {
 app.post('/public/faces', [], (req, res) => {
   if(!req.files || Object.keys(req.files).length === 0) res.status(400).end('No files were uploaded.');
   const image = req.files.avatar;
-  const directory = `/public/faces/${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
-  image.mv(__dirname+directory, (error) => {
+  const name = `${req.body.name}.${image.name.split(".")[image.name.split(".").length-1]}`;
+  image.mv(`${__dirname}/public/faces/${name}`, (error) => {
     if (error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
       res.end(JSON.stringify({ status: 'error', message: error }));
       return;
     }
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', directory: directory}));
+    res.end(JSON.stringify({ status: 'success', directory: name}));
   });
 });
 
@@ -160,12 +159,20 @@ app.put('/statistics/:profileId', (req, res) => {
       .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// DELETE /public/<imgPath>
-app.delete(`/public/faces/strangers/:imgPath`, (req, res) => {
-  if(!req.params.imgPath) res.status(400).end();
-  console.log(req.params.imgPath);
-  fs.unlink(`${__dirname}/public/faces/strangers/${req.params.imgPath}`, (err) => {
-    if(err) {console.log(err);res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
+// DELETE /public/faces/<imgPath>
+app.delete(`/public/faces/:imgName`, (req, res) => {
+  if(!req.params.imgName) res.status(400).end();
+  fs.unlink(`${__dirname}/public/faces/${req.params.imgName}`, (err) => {
+    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
+    res.status(200).end();
+  });
+});
+
+// DELETE /public/faces/strangers/<imgName>
+app.delete(`/public/faces/strangers/:imgName`, (req, res) => {
+  if(!req.params.imgName) res.status(400).end();
+  fs.unlink(`${__dirname}/public/faces/strangers/${req.params.imgName}`, (err) => {
+    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
   });
 });
