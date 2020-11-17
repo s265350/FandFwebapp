@@ -98,7 +98,7 @@ exports.getStatistics = function() {
         const sql = 'SELECT * FROM statistics';
         db.all(sql, (err, rows) => {
             if (err) {reject(err);return;}
-            const statistics = rows.map((row) => ({profileId: row.profileId, faces: row.faces, recognized: row.recognized}));
+            const statistics = rows.map((row) => ({profileId: row.profileId, faces: row.faces, unrecognized: row.unrecognized}));
             resolve(statistics);
         });
     });
@@ -111,7 +111,7 @@ exports.getProfileStatisticsById = function(profileId) {
             if (err) {reject(err);return;}
             if (row == undefined) {resolve({});
             } else {
-                const profileStatistics = {profileId: row.profileId, faces: row.faces, recognized: row.recognized};
+                const profileStatistics = {profileId: row.profileId, faces: row.faces, unrecognized: row.unrecognized};
                 resolve(profileStatistics);
             }
         });
@@ -121,7 +121,7 @@ exports.getProfileStatisticsById = function(profileId) {
 /* POST */
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
-        const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail) VALUES(?,?,?,?,?,?,?,?,?,?)';
+        const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
             if (err) {reject(err);return;}
             resolve();
@@ -131,8 +131,8 @@ exports.createProfile = function(profile) {
 
 exports.createProfileStatistics = function(profileStatistics) {
     return new Promise((resolve, reject) => {
-        const sql = 'INSERT INTO statistics (profileId, faces, recognized) VALUES(?,?,?)';
-        db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.recognized], function (err) {
+        const sql = 'INSERT INTO statistics (profileId, faces, unrecognized) VALUES(?,?,?)';
+        db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized], function (err) {
             if (err) {reject(err);return;}
             resolve();
         });
@@ -154,8 +154,8 @@ exports.updateProfile = function(profile){
 // Update the profile statistics with the given id
 exports.updateProfileStatistics = function(profileStatistics){
     return new Promise( (resolve, reject) => {
-        const sql = 'UPDATE statistics SET profileId = ?, faces = ?, recognized = ? WHERE profileId = ?';
-        db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.recognized, profileStatistics.profileId], (err) => {
+        const sql = 'UPDATE statistics SET profileId = ?, faces = ?, unrecognized = ? WHERE profileId = ?';
+        db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized, profileStatistics.profileId], (err) => {
             if(err) reject(err);
             resolve(null);
         });

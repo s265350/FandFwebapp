@@ -45,9 +45,12 @@ b{font-size: 1.2em;font-weight: normal;}
 @supports ((position: sticky)) {.sidebar-sticky {position: sticky;}}
 
 /* Avatars */
-.overlay{transition: .5s ease;opacity: 0;position: absolute;top: 50%;left: 50%;transform: translate(-35%, -50%);-ms-transform: translate(-35%, -50%);font-size: 5em}
 .avatar-overlay{cursor: pointer;transition: .5s ease;}
 .avatar-overlay:hover{opacity: 0.5;}
-.avatar-overlay:hover img{opacity: 0.3;}
-.avatar-overlay:hover .overlay {opacity: 1;}
-.selected{transition: .1s ease;border-style: double;border-radius: 5%;border-width: thick;}
+.avatar-overlay:hover img{transition: .4s ease;transform: scale(1.3);}
+.avatar{cursor: pointer;transition: .5s ease;border-width: 0px;}
+.avatar img{width: 100%}
+.avatar span{transition: .5s ease;opacity: 0;position: absolute;top: 50%;left: 50%;transform: translate(-35%, -50%);-ms-transform: translate(-35%, -50%);font-size: 5em}
+.avatar:hover{opacity: 0.5;}
+.avatar:hover span {opacity: 1;}
+.selected{transition: .1s ease;border-style: solid;border-width: thick;}

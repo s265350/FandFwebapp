@@ -30,12 +30,12 @@ async function getProfileById(profileId) {
 }
 
 async function getAdminProfile() {
-    const response = await fetch(`/adminprofile`);
+    const response = await fetch(`/profile/admin`);
     if(response.ok){
         const profile = await response.json();
         return Profile.from(profile);
     } else
-        throw `ERROR fetching /adminprofile`;
+        throw `ERROR fetching /profile/admin`;
 }
 
 async function getAllStatistics() {
@@ -56,6 +56,15 @@ async function getProfileStatisticsById(profileId) {
         throw `ERROR fetching /statistics/${profileId}`;
 }
 
+async function getStrangers(){
+    const response = await fetch(`/faces/strangers`);
+    if(response.ok){
+        const res = await response.json();
+        return res;
+    } else
+        throw `ERROR fetching /profile/strangers`;
+}
+
 /* POST */
 async function newProfile(profile) {
     return new Promise( (resolve, reject) => {
@@ -68,9 +77,9 @@ async function newProfile(profile) {
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
             }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
     });
 }
 
@@ -85,9 +94,43 @@ async function newProfileStatistics(profileStatistics) {
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
             }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+async function uploadAvatarImage(file, name){
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('avatar', file);
+    return new Promise( (resolve, reject) => {
+        fetch('/public/faces', {method: 'POST', body: formData})
+        .then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+async function uploadStrangerImage(filename, name){
+    const formData = new FormData();
+    formData.append('path', filename);
+    formData.append('name', `${name}.${filename.split(".")[1]}`);
+    const copy = new Promise( (resolve, reject) => {
+        fetch(`/public/faces/strangers`, {method: 'POST', body: formData})
+        .then( (response) => {
+            if(response.ok) resolve(null);
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
     });
 }
 
@@ -103,9 +146,9 @@ async function updateProfile(profile) {
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
             }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
     });
 }
 
@@ -120,10 +163,57 @@ async function updateProfileStatistics(profileStatistics) {
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
             }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
     });
 }
 
-export {getAllProfiles, getAllProfilesId, getProfileById, getAdminProfile, getAllStatistics, getProfileStatisticsById, newProfile, newProfileStatistics, updateProfile, updateProfileStatistics};
+/* DELETE */
+async function deleteAvatar(imgName){
+    return new Promise( (resolve, reject) => {
+        fetch(`/public/faces/${imgName}`, {
+            method: 'DELETE',
+        }).then( (response) => {
+            if(response.ok) resolve(null);
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+async function deleteStranger(imgName){
+    return new Promise( (resolve, reject) => {
+        fetch(`/public/faces/strangers/${imgName}`, {
+            method: 'DELETE',
+        }).then( (response) => {
+            if(response.ok) resolve(null);
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+export {
+    getAllProfiles, 
+    getAllProfilesId, 
+    getProfileById, 
+    getAdminProfile, 
+    getAllStatistics, 
+    getProfileStatisticsById, 
+    getStrangers, 
+    newProfile, 
+    newProfileStatistics, 
+    uploadAvatarImage, 
+    uploadStrangerImage, 
+    updateProfile, 
+    updateProfileStatistics, 
+    deleteAvatar, 
+    deleteStranger
+};
