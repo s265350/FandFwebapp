@@ -3,6 +3,7 @@ import * as Main from './main.js';
 import Profile from "./profile.js";
 import ProfileStatistics from "./profilestatistics.js";
 
+// creates ad div html element containing the modal
 function createEditModal(){
     const modal = document.createElement("div");modal.setAttribute("id", "edit_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "editModal");modal.setAttribute("aria-hidden", "true");modal.setAttribute("data-backdrop", "static");modal.setAttribute("data-keyboard", "false");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
@@ -18,13 +19,16 @@ function createEditModal(){
     const form =  document.createElement("form");row.appendChild(form);
     const form_row =  document.createElement("div");form_row.setAttribute("class", "form-row");form.appendChild(form_row);
     div =  document.createElement("div");div.setAttribute("class", "col-md-5 col-lg-4");form_row.appendChild(div);
+    // avatar
     let group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     element = document.createElement("img");element.setAttribute("id", "edit_avatar");element.setAttribute("class", "img-rounded img-respinsive col-12 m-2");element.setAttribute("src", "svg/avatar.svg");group.appendChild(element);
+    // file upload
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     let input = document.createElement("div");input.setAttribute("class", "custom-file");group.appendChild(input);
     element = document.createElement("input");element.setAttribute("id", "edit_upload");element.setAttribute("name", "avatar");element.setAttribute("class", "custom-file-input");element.setAttribute("type", "file");element.setAttribute("style", "cursor: pointer;");input.setAttribute("accept", ".png, .jpg, .jpeg, .svg");input.appendChild(element);
     element = document.createElement("label");element.setAttribute("class", "custom-file-label");element.setAttribute("for", "edit_upload");element.innerHTML = `<i class="fa fa-image mr-2"></i>Upload photo`;input.appendChild(element);
     div =  document.createElement("div");div.setAttribute("class", "col-md-7 col-lg-8");form_row.appendChild(div);
+    // name fields
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     input = document.createElement("div");input.setAttribute("class", "input-group");group.appendChild(input);
     element = document.createElement("input");element.setAttribute("id", "edit_firstname");element.setAttribute("class", "form-control border-warning");element.setAttribute("type", "text");element.setAttribute("placeholder", "First name*");
@@ -34,6 +38,7 @@ function createEditModal(){
     };
     input.appendChild(element);
     element = document.createElement("input");element.setAttribute("id", "edit_lastname");element.setAttribute("class", "form-control");element.setAttribute("type", "text");element.setAttribute("placeholder", "Last name");input.appendChild(element);
+    // phone field
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     input = document.createElement("div");input.setAttribute("class", "input-group");group.appendChild(input);
     element = document.createElement("input");element.setAttribute("id", "edit_phone");element.setAttribute("class", "form-control border-warning");element.setAttribute("type", "tel");element.setAttribute("placeholder", "Phone number*");
@@ -49,6 +54,7 @@ function createEditModal(){
         document.getElementById("edit_phonebutton").classList.toggle("fa-bell");
     });
     group.appendChild(element);
+    // email field
     group = document.createElement("div");group.setAttribute("class", "form-group");div.appendChild(group);
     input = document.createElement("div");input.setAttribute("class", "input-group");group.appendChild(input);
     group = document.createElement("div");group.setAttribute("class", "input-group-prepend");input.appendChild(group);
@@ -71,6 +77,7 @@ function createEditModal(){
         document.getElementById("edit_notification_adv").innerHTML = `<i class="fas fa-info mr-3"></i><b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;
     });
     group.appendChild(element);
+    // system role field
     group = document.createElement("select");group.setAttribute("id", "edit_system");group.setAttribute("class", "custom-select border-warning");
     group.onchange = function(){
         if(document.getElementById("edit_system").value == 0){document.getElementById("edit_system").classList.add("border-warning");}
@@ -90,6 +97,7 @@ function createEditModal(){
         document.getElementById("edit_notification_adv").classList.add("text-secondary", "show");
         document.getElementById("edit_notification_adv").innerHTML = `<i class="fas fa-info mr-3"></i><b>These badges specify the roles related to this user for the system and the family and to which priviledges it has access.</b>`;
     });
+    // family role field
     group = document.createElement("select");group.setAttribute("id", "edit_family");group.setAttribute("class", "custom-select");input.appendChild(group);
     element = document.createElement("option");element.setAttribute("value", "0");element.innerText = `Choose...`;element.selected = true;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "1");element.innerText = `Father`;group.appendChild(element);
@@ -100,6 +108,7 @@ function createEditModal(){
     element = document.createElement("option");element.setAttribute("value", "6");element.innerText = `Female Friend`;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "7");element.innerText = `Other`;group.appendChild(element);
     div = document.createElement("div");div.setAttribute("class", "col-12");form.appendChild(div);
+    // adv
     const span = document.createElement("span");span.setAttribute("id", "edit_notification_adv");span.setAttribute("class", "notification-adv text-warning");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
     span.addEventListener("click", () => {
         document.getElementById("edit_notification_adv").classList.remove("show", "text-danger", "text-secondary");
@@ -113,6 +122,7 @@ function createEditModal(){
 }
 
 function populateEditModal(profile){
+    // check if its populated by a profile object or an image src string (uptade an extisting profile or creating a new one)
     const newProfile = (typeof profile === 'string' || profile instanceof String);
     if (newProfile){
         document.getElementById("edit_title").innerHTML = `<i class="fa fa-user-plus mr-2"></i>Create new profile`;
@@ -185,12 +195,14 @@ async function submitEditModal(profile){
         document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
         return;
     }
+    // create a rofile object (system, family and avatar fields are computed below)
     const newProfile = new Profile(
         document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
         document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
         document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
         document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),""
     );
+    // avatar
     newProfile.avatar = document.getElementById("edit_avatar").getAttribute("src").split("/")[document.getElementById("edit_avatar").getAttribute("src").split("/").length-1];
     if(document.getElementById('edit_upload').files[0]){
         newProfile.avatar = await Api.uploadAvatarImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`);
@@ -204,9 +216,13 @@ async function submitEditModal(profile){
             await Api.deleteStranger(profile.split("/")[profile.split("/").length-1]);
         }
     }
+    // system role
     document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
+    // family role
     document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)newProfile.family = child.innerText;});
+    // hide modal
     $("#edit_modal").modal("toggle");
+    // update database and reload th page
     if(updateProfile){
         await Api.updateProfile(newProfile);
         Main.loadProfile();
@@ -217,6 +233,7 @@ async function submitEditModal(profile){
     };
 }
 
+// creates ad div html element containing the profile
 function createProfile(id){
     const profile = document.createElement("div");profile.setAttribute("id", id);profile.setAttribute("class", "row align-items-center justify-content-start");
     let div = document.createElement("div");div.setAttribute("id", `${id}_avatar`);div.setAttribute("class", "card overflow-hidden col-md-4 col-lg-3 avatar");profile.appendChild(div);
@@ -241,6 +258,8 @@ function createProfile(id){
 }
 
 function populateProfile(loggedProfile, profile){
+    // profile can be used both inside the profile page and in the family modal
+    // is not possible to load logged profile in the modal
     let id = "profile";
     if(loggedProfile.profileId != profile.profileId) id = "family";
     const prodileAvatar = document.getElementById(`${id}_avatar`);
@@ -343,6 +362,7 @@ function showAdv(message, id){
     }
 }
 
+// creates ad div html element containing the progress bar showing the recognized-unrecognazed faces ratio for a profile
 function createProfileAccuracy(id){
     const container = document.createElement("div");container.setAttribute("id", `${id}_accuracy`);container.setAttribute("class", "row align-items-center justify-content-around pt-2");
     let div = document.createElement("span");div.setAttribute("class", "col-12 text-secondary");container.appendChild(div);
@@ -370,6 +390,7 @@ async function populateProfileAccuracy(profileId, id){
     else progressbar.setAttribute("style", `text-align: left;width: ${value}%`);
 }
 
+// creates ad div html element containing the card image
 function familyListItem(loggedProfile, profile){
     const card = document.createElement("div");
     card.setAttribute("id", `select_${profile.profileId}`);
@@ -385,6 +406,7 @@ function familyListItem(loggedProfile, profile){
     return card;
 }
 
+// creates ad div html element containing the modal
 function createFamilyModal(){
     const modal = document.createElement("div");modal.setAttribute("id", "family_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalFamilyLabel");modal.setAttribute("aria-hidden", "true");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);

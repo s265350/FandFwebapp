@@ -1,12 +1,14 @@
-'use strict';
-
+/* DATA ACCESS OBJECT */
 // DAO module for accessing profiles and statistics
-// Data Access Object
+
+'use strict';
 
 const sqlite = require('sqlite3');
 const db = new sqlite.Database('database.db', (err) => {if(err) throw err;});
 
 /* GET */
+
+// get all profiles rows as Profile objects
 exports.getProfiles = function() {
     return new Promise( (resolve, reject) => {
     const sql = 'SELECT * FROM profiles';
@@ -30,6 +32,7 @@ exports.getProfiles = function() {
     });
 };
 
+// get all profiles ID
 exports.getProfilesId = function() {
     return new Promise( (resolve, reject) => {
     const sql = 'SELECT * FROM profiles';
@@ -41,6 +44,7 @@ exports.getProfilesId = function() {
     });
 };
 
+// get profile with corresponding profile ID
 exports.getProfileById = function(id) {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM profiles WHERE profileId = ?';
@@ -67,6 +71,7 @@ exports.getProfileById = function(id) {
     });
 };
 
+// get first admin profile
 exports.getAdminProfile = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM profiles WHERE system = ?';
@@ -92,7 +97,8 @@ exports.getAdminProfile = function() {
         });
     });
 };
-  
+
+// get all statistics as ProfileStatistics objects
 exports.getStatistics = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM statistics';
@@ -103,7 +109,8 @@ exports.getStatistics = function() {
         });
     });
 };
-  
+
+// get ProfileStatistics object with corresponding profile ID
 exports.getProfileStatisticsById = function(profileId) {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM statistics WHERE profileId=?';
@@ -119,6 +126,8 @@ exports.getProfileStatisticsById = function(profileId) {
 };
 
 /* POST */
+
+// upload a new profile row
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
@@ -129,6 +138,7 @@ exports.createProfile = function(profile) {
     });
 };
 
+// upload a new statistics row
 exports.createProfileStatistics = function(profileStatistics) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO statistics (profileId, faces, unrecognized) VALUES(?,?,?)';
@@ -140,7 +150,8 @@ exports.createProfileStatistics = function(profileStatistics) {
 };
 
 /* PUT */
-// Update the profile with the given id
+
+// update a profile row
 exports.updateProfile = function(profile){
     return new Promise( (resolve, reject) => {
         const sql = 'UPDATE profiles SET profileId = ?, firstName = ?, lastName = ?, phone = ?, email = ?, system = ?, family = ?, notifications = ?, notificationsPhone = ?, notificationsEmail = ?, avatar = ? WHERE profileId = ?';
@@ -151,7 +162,7 @@ exports.updateProfile = function(profile){
     });
 }
 
-// Update the profile statistics with the given id
+// update a ProfileStatistics row
 exports.updateProfileStatistics = function(profileStatistics){
     return new Promise( (resolve, reject) => {
         const sql = 'UPDATE statistics SET profileId = ?, faces = ?, unrecognized = ? WHERE profileId = ?';

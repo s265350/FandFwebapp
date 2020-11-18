@@ -2,9 +2,9 @@
 
 class ProfileStatisctics {
     constructor(profileId){
-        this.profileId = profileId;
-        this.faces = 1;
-        this.unrecognized = 1;
+        this.profileId = profileId; // every profile has to be created as well its statistics
+        this.faces = 1; // considering the profile image
+        this.unrecognized = 1; // profile image was not recognized
     }
     static from (json) {
         // returns a ProfileStatisctics obj from a json one

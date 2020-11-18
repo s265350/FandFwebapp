@@ -1,7 +1,11 @@
+/* Fetch API */
+
 import Profile from "./profile.js";
 import ProfileStatistics from "./profilestatistics.js";
 
 /* GET */
+
+// get all profiles rows as Profile objects
 async function getAllProfiles() {
     const response = await fetch(`/profiles`);
     if(response.ok){
@@ -11,6 +15,7 @@ async function getAllProfiles() {
         throw `ERROR fetching /profiles`;
 }
 
+// get all profiles ID
 async function getAllProfilesId() {
     const response = await fetch(`/profilesid`);
     if(response.ok){
@@ -20,6 +25,7 @@ async function getAllProfilesId() {
         throw `/statistics`;
 }
 
+// get profile with corresponding profile ID
 async function getProfileById(profileId) {
     const response = await fetch(`/profiles/${profileId}`);
     if(response.ok){
@@ -29,6 +35,7 @@ async function getProfileById(profileId) {
         throw `ERROR fetching /profiles/${profileId}`;
 }
 
+// get first admin profile
 async function getAdminProfile() {
     const response = await fetch(`/profile/admin`);
     if(response.ok){
@@ -38,6 +45,7 @@ async function getAdminProfile() {
         throw `ERROR fetching /profile/admin`;
 }
 
+// get all statistics as ProfileStatistics objects
 async function getAllStatistics() {
     const response = await fetch(`/statistics`);
     if(response.ok){
@@ -47,6 +55,7 @@ async function getAllStatistics() {
         throw `ERROR fetching /statistics`;
 }
 
+// get ProfileStatistics object with corresponding profile ID
 async function getProfileStatisticsById(profileId) {
     const response = await fetch(`/statistics/${profileId}`);
     if(response.ok){
@@ -56,6 +65,7 @@ async function getProfileStatisticsById(profileId) {
         throw `ERROR fetching /statistics/${profileId}`;
 }
 
+// get path list for all images in "strangers" folder
 async function getStrangers(){
     const response = await fetch(`/faces/strangers`);
     if(response.ok){
@@ -66,6 +76,8 @@ async function getStrangers(){
 }
 
 /* POST */
+
+// upload a new profile row
 async function newProfile(profile) {
     return new Promise( (resolve, reject) => {
         fetch(`/profiles`, {
@@ -83,6 +95,7 @@ async function newProfile(profile) {
     });
 }
 
+// upload a new statistics row
 async function newProfileStatistics(profileStatistics) {
     return new Promise( (resolve, reject) => {
         fetch(`/statistics`, {
@@ -135,6 +148,8 @@ async function uploadStrangerImage(filename, name){
 }
 
 /* PUT */
+
+// update a profile row
 async function updateProfile(profile) {
     return new Promise( (resolve, reject) => {
         fetch(`/profiles/${profile.profileId}`, {
@@ -152,6 +167,7 @@ async function updateProfile(profile) {
     });
 }
 
+// update a ProfileStatistics row
 async function updateProfileStatistics(profileStatistics) {
     return new Promise( (resolve, reject) => {
         fetch(`/statistics/${profileStatistics.profileId}`, {
@@ -170,6 +186,8 @@ async function updateProfileStatistics(profileStatistics) {
 }
 
 /* DELETE */
+
+// delete an image in "faces" folder
 async function deleteAvatar(imgName){
     return new Promise( (resolve, reject) => {
         fetch(`/public/faces/${imgName}`, {
@@ -185,6 +203,7 @@ async function deleteAvatar(imgName){
     });
 }
 
+// delete an image in "strangers" folder
 async function deleteStranger(imgName){
     return new Promise( (resolve, reject) => {
         fetch(`/public/faces/strangers/${imgName}`, {

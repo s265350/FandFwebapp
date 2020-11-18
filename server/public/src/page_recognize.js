@@ -2,6 +2,7 @@ import * as Api from './api.js';
 import * as Main from './main.js';
 import * as P_profile from './page_profile.js';
 
+// creates ad div html element containing the modal
 function createRecognizeModal(){
     const modal = document.createElement("div");modal.setAttribute("id", "recognize_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "selectionModal");modal.setAttribute("data-backdrop", "static");modal.setAttribute("data-keyboard", "false");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
@@ -25,6 +26,7 @@ function createRecognizeModal(){
     return modal;
 }
 
+// creates ad div html element containing the card image
 function recognizeListItem(imgPath){
     const card = document.createElement("div");
     card.setAttribute("class", "card avatar-overlay overflow-hidden");
@@ -61,6 +63,7 @@ function clearRecognizeModal(){
     document.getElementById("recognize_save").innerHTML = `<i class="fa fa-times-circle mr-2"></i>Close`;
 }
 
+// updates statistics and delete the image
 async function submitRecognizeModal(imgPath){
     let profileId = undefined;
     document.getElementById("selection").childNodes.forEach(card => {if(card.classList.contains("selected")){profileId = card.getAttribute("id").split("_")[1];}});
@@ -69,12 +72,12 @@ async function submitRecognizeModal(imgPath){
         profileStatistics.faces++;
         profileStatistics.unrecognized++;
         await Api.updateProfileStatistics(profileStatistics);
-        //TODO: move image to faces directory
         await Api.deleteStranger(imgPath.split("/")[3]);
         Main.loadRecognize();
     }
 }
 
+// creates ad div html element containing the card image
 function profileListItem(profile){
     const card = document.createElement("div");
     card.setAttribute("id", `select_${profile.profileId}`);

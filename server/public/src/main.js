@@ -3,22 +3,25 @@ import * as P_recognize from './page_recognize.js';
 import * as P_profile from './page_profile.js';
 
 window.addEventListener('load', () => {
-    /* LOGIN */
+    /* LOGIN it would complicate the code and it's not mandatory for the system to work */
+    // sidebar listeners
     document.getElementById("sideHome").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideHome").classList.add("active");loadHome();});
     document.getElementById("sideRecognize").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideRecognize").classList.add("active");loadRecognize();});
     document.getElementById("sideProfile").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideProfile").classList.add("active");loadProfile();});
     document.getElementById("sideAboutUs").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideAboutUs").classList.add("active");loadAboutUs();});
+    // webcam setup
     const video = document.getElementById("webcam");
     if (navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function (stream) { video.srcObject = stream; })
             .catch(function (err0r) { console.log(`Video stream error: ${err0r}`); });
     }
+    // init page
     loadHome();
 });
 
 function loadHome(){
-    // video
+    // video css and listener
     document.getElementById("videowrap").classList.remove("video");
     document.getElementById("webcam").removeEventListener("click", () => {loadHome()});
     // clear page content
@@ -26,15 +29,14 @@ function loadHome(){
 }
 
 async function loadRecognize(){
-    const loggedProfile = await Api.getAdminProfile("Admin");
-    // video
+    // video css and listener
     document.getElementById("videowrap").classList.add("video");
     document.getElementById("webcam").addEventListener("click", () => {loadHome()});
     // clear page content
     const content = document.getElementById("content");content.innerHTML = "";
-    // header
+    // page header
     let img = document.createElement("img");img.setAttribute("class", "img-fluid");img.setAttribute("src", "svg/polito.png");content.appendChild(img);
-    // body
+    // page body
     const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
     const title = document.createElement("p");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-question mr-3"></i>I don't recognize those faces`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
@@ -47,16 +49,17 @@ async function loadRecognize(){
 }
 
 async function loadProfile(){
+    // if login is available this will change
     const loggedProfile = await Api.getAdminProfile("Admin");
-    // video
+    // video css and listener
     document.getElementById("videowrap").classList.add("video");
     document.getElementById("webcam").addEventListener("click", () => {loadHome()});
     // clear page content
     const content = document.getElementById("content");content.innerHTML = "";
-    // header
+    // page header
     const img = document.createElement("img");img.setAttribute("class", "img-fluid");img.setAttribute("src", "svg/polito.png");content.appendChild(img);
-    // body
-    // logged profile
+    // page body
+    // profile section
     const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
     let title = document.createElement("p");title.setAttribute("id", "profile_title");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fa fa-user mr-3"></i>FirstName LastName`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
@@ -64,7 +67,7 @@ async function loadProfile(){
     P_profile.populateProfile(loggedProfile, loggedProfile);
     container.appendChild(P_profile.createProfileAccuracy("profile"));
     await P_profile.populateProfileAccuracy(loggedProfile.profileId, "profile");
-    // family
+    // family section
     title = document.createElement("p");title.setAttribute("class", "subtitle text-dark pt-4");title.innerHTML = `<i class="fa fa-home mr-2"></i>Family`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
     const list = document.createElement("div");list.setAttribute("class", "card-columns");container.appendChild(list);
@@ -76,28 +79,17 @@ async function loadProfile(){
 }
 
 async function loadAboutUs(){
-    /* HTML */
+    // video css and listener
     document.getElementById("videowrap").classList.add("video");
     document.getElementById("webcam").addEventListener("click", () => {loadHome()});
-    const content = document.getElementById("content");
-    content.innerHTML = "";
-    // header
-    const img = document.createElement("img");
-    img.setAttribute("class", "img-fluid");
-    img.setAttribute("src", "svg/polito.png");
-    content.appendChild(img);
-    // container
-    const container = document.createElement("div");
-    container.setAttribute("id", "container");
-    container.setAttribute("class", "p-4 m-4");
-    content.appendChild(container);
-    // title
-    const title = document.createElement("p");
-    title.setAttribute("class", "title text-dark");
-    title.innerHTML = `<i class="fas fa-info mr-3"></i>Who we are`;
-    container.appendChild(title);
+    // clear page content
+    const content = document.getElementById("content");content.innerHTML = "";
+    // page header
+    const img = document.createElement("img");img.setAttribute("class", "img-fluid");img.setAttribute("src", "svg/polito.png");content.appendChild(img);
+    // page body
+    const container = document.createElement("div");container.setAttribute("id", "container");container.setAttribute("class", "p-4 m-4");content.appendChild(container);
+    const title = document.createElement("p");title.setAttribute("class", "title text-dark");title.innerHTML = `<i class="fas fa-info mr-3"></i>Who we are`;container.appendChild(title);
     container.appendChild(document.createElement("hr"));
-    // body
     const div = document.createElement("div");
     div.setAttribute("class", "row p-1 m-1");
     container.appendChild(div);
