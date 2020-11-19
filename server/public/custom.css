@@ -16,7 +16,7 @@ b{font-size: 1.2em;font-weight: normal;}
 
 @keyframes fade-in-up {0% {opacity: 0;}100% {transform: translateY(0);opacity: 1;}}
 .video{position: fixed;bottom: 5%;left: 3%;width: 17%;height: auto;transform: translateY(100%);animation: fade-in-up 0.75s ease forwards;z-index: 100;cursor: pointer;}
-.video #webcam{border: 0 solid;border-radius: 5%;}
+.video #video{border: 0 solid;border-radius: 5%;}
 
 .notification{font-size: 1.2em;font-weight: normal;cursor: pointer;}
 .notification-adv{visibility: hidden;font-size: 1em;font-weight: normal;cursor: pointer;}

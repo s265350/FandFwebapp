@@ -27,33 +27,35 @@ function createRecognizeModal(){
 }
 
 // creates ad div html element containing the card image
-function recognizeListItem(imgPath){
+async function recognizeListItem(imgName){
     const card = document.createElement("div");
     card.setAttribute("class", "card avatar-overlay overflow-hidden");
     card.setAttribute("data-toggle", "modal");
     card.setAttribute("data-target", "#recognize_modal");
-    card.addEventListener("click", () => {populateRecognizeModal(imgPath);});
+    card.addEventListener("click", () => {populateRecognizeModal(imgName);});
     const img = document.createElement("img");
     img.setAttribute("class", "card-img");
-    img.setAttribute("src", imgPath);
+    const image = await Api.getImage(imgName, true);
+    img.setAttribute("src", image);
     card.appendChild(img);
     return card;
 }
 
-async function populateRecognizeModal(imgPath){
+async function populateRecognizeModal(imgName){
     // avatar
-    document.getElementById("recognize_avatar").setAttribute("src", imgPath);
+    const image = await Api.getImage(imgName, true);
+    document.getElementById("recognize_avatar").setAttribute("src", image);
     // selection list
     const profiles = await Api.getAllProfiles();
-    profiles.forEach(profile => {document.getElementById("selection").appendChild(profileListItem(profile));});
+    for(let i=0; i<profiles.length; i++){document.getElementById("selection").appendChild(await profileListItem(profiles[i]));}
     // save button
     document.getElementById("recognize_save").addEventListener("click", () => {
-        submitRecognizeModal(imgPath);
+        submitRecognizeModal(imgName);
         clearRecognizeModal();
     });
     // new profile button
     document.getElementById("recognize_new").addEventListener("click", () => {
-        P_profile.populateEditModal(imgPath);
+        P_profile.populateEditModal(imgName);
         clearRecognizeModal();
     });
 }
@@ -64,7 +66,7 @@ function clearRecognizeModal(){
 }
 
 // updates statistics and delete the image
-async function submitRecognizeModal(imgPath){
+async function submitRecognizeModal(imgName){
     let profileId = undefined;
     document.getElementById("selection").childNodes.forEach(card => {if(card.classList.contains("selected")){profileId = card.getAttribute("id").split("_")[1];}});
     if(profileId){
@@ -72,13 +74,13 @@ async function submitRecognizeModal(imgPath){
         profileStatistics.faces++;
         profileStatistics.unrecognized++;
         await Api.updateProfileStatistics(profileStatistics);
-        await Api.deleteStranger(imgPath.split("/")[3]);
+        await Api.deleteImage(imgName, true);
         Main.loadRecognize();
     }
 }
 
 // creates ad div html element containing the card image
-function profileListItem(profile){
+async function profileListItem(profile){
     const card = document.createElement("div");
     card.setAttribute("id", `select_${profile.profileId}`);
     card.setAttribute("class", "card avatar-overlay overflow-hidden");
@@ -91,7 +93,8 @@ function profileListItem(profile){
     });
     const img = document.createElement("img");
     img.setAttribute("class", "card-img");
-    img.setAttribute("src", `/faces/${profile.avatar}`);
+    const image = await Api.getImage(profile.avatar, false);
+    img.setAttribute("src", image);
     card.appendChild(img);
     return card;
 }

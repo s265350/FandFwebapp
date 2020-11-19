@@ -37,12 +37,12 @@ async function getProfileById(profileId) {
 
 // get first admin profile
 async function getAdminProfile() {
-    const response = await fetch(`/profile/admin`);
+    const response = await fetch(`/admin`);
     if(response.ok){
         const profile = await response.json();
         return Profile.from(profile);
     } else
-        throw `ERROR fetching /profile/admin`;
+        throw `ERROR fetching /admin`;
 }
 
 // get all statistics as ProfileStatistics objects
@@ -67,12 +67,23 @@ async function getProfileStatisticsById(profileId) {
 
 // get path list for all images in "strangers" folder
 async function getStrangers(){
-    const response = await fetch(`/faces/strangers`);
+    const response = await fetch(`/strangers`);
     if(response.ok){
         const res = await response.json();
         return res;
     } else
-        throw `ERROR fetching /profile/strangers`;
+        throw `ERROR fetching /strangers`;
+}
+
+// get profile image or stranger image
+async function getImage(filename, stranger) {
+    let path = "";
+    if(stranger) path = "/strangers";
+    const response = await fetch(`/faces${path}/${filename}`);
+    if(response.ok){
+        return response.url;
+    } else
+        throw `ERROR fetching /faces${path}/${filename}`;
 }
 
 /* POST */
@@ -113,12 +124,15 @@ async function newProfileStatistics(profileStatistics) {
     });
 }
 
-async function uploadAvatarImage(file, name){
+// upload an image in "faces" or "strangers" folder
+async function uploadImage(file, name, stranger){
     const formData = new FormData();
     formData.append('name', name);
     formData.append('avatar', file);
+    let path = "faces";
+    if(stranger) path = "strangers";
     return new Promise( (resolve, reject) => {
-        fetch('/public/faces', {method: 'POST', body: formData})
+        fetch(`/${path}`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {
@@ -130,12 +144,14 @@ async function uploadAvatarImage(file, name){
     });
 }
 
-async function uploadStrangerImage(filename, name){
-    const formData = new FormData();
-    formData.append('path', filename);
-    formData.append('name', `${name}.${filename.split(".")[1]}`);
-    const copy = new Promise( (resolve, reject) => {
-        fetch(`/public/faces/strangers`, {method: 'POST', body: formData})
+// copy an image from "strangers" folder to "faces" one
+async function saveStrangerImage(filename, name){
+    return new Promise( (resolve, reject) => {
+        fetch(`/faces/strangers`, {
+            method: 'POST',
+            headers:{'Content-Type': 'application/json',},
+            body: JSON.stringify({"filename": filename, "name": name}),
+        })
         .then( (response) => {
             if(response.ok) resolve(null);
             else {
@@ -187,11 +203,13 @@ async function updateProfileStatistics(profileStatistics) {
 
 /* DELETE */
 
-// delete an image in "faces" folder
-async function deleteAvatar(imgName){
+// delete an image in "faces" or "strangers" folder
+async function deleteImage(filename, stranger){
     return new Promise( (resolve, reject) => {
-        fetch(`/public/faces/${imgName}`, {
+        fetch(`/faces/${filename}`, {
             method: 'DELETE',
+            headers:{'Content-Type': 'application/json',},
+            body: JSON.stringify({"stranger": stranger}),
         }).then( (response) => {
             if(response.ok) resolve(null);
             else {
@@ -203,21 +221,7 @@ async function deleteAvatar(imgName){
     });
 }
 
-// delete an image in "strangers" folder
-async function deleteStranger(imgName){
-    return new Promise( (resolve, reject) => {
-        fetch(`/public/faces/strangers/${imgName}`, {
-            method: 'DELETE',
-        }).then( (response) => {
-            if(response.ok) resolve(null);
-            else {
-                response.json()
-                    .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
-            }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
-    });
-}
+//TODO: delete Profiles and ProfileStatistics
 
 export {
     getAllProfiles, 
@@ -227,12 +231,12 @@ export {
     getAllStatistics, 
     getProfileStatisticsById, 
     getStrangers, 
+    getImage, 
     newProfile, 
     newProfileStatistics, 
-    uploadAvatarImage, 
-    uploadStrangerImage, 
+    saveStrangerImage, 
+    uploadImage, 
     updateProfile, 
     updateProfileStatistics, 
-    deleteAvatar, 
-    deleteStranger
+    deleteImage, 
 };
