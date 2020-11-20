@@ -7,6 +7,7 @@ const express = require("express");
 const fileupload = require('express-fileupload');
 const fs = require('fs');
 const dao = require('./dao.js');
+const { createCanvas, loadImage } = require('canvas')
 
 /* App Variables */
 const app = express();
@@ -125,11 +126,16 @@ app.post('/faces', [], (req, res) => {
 });
 
 // POST upload a new image in "strangers" folder
-// Request body: image file to upload and name given to it
+// Request body: image url to upload and name given to it
 app.post('/strangers', [], (req, res) => {
-  if(!req.files || Object.keys(req.files).length === 0) res.status(400).end(`No files were uploaded`);
-  if(!req.body.name) res.status(400).end(`name: ${req.body.name}`);
-  //TODO:
+  if(!req.body.url || !req.body.width || !req.body.height || !req.body.name) res.status(400).end(`url: ${req.body.url};width: ${req.body.width};height: ${req.body.height};name: ${req.body.name}`);
+  const canvas = createCanvas(req.body.width, req.body.height);
+  const context = canvas.getContext('2d');
+  loadImage(req.body.url).then(image => {
+    context.drawImage(image, 0, 0);
+    const buffer = canvas.toBuffer('image/png');
+    fs.writeFileSync(`${__dirname}/faces/strangers/${req.body.name}`, buffer);
+  });
 });
 
 // POST move an image from "strangers" folder to the "faces" one

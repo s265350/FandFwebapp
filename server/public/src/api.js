@@ -144,7 +144,25 @@ async function uploadImage(file, name, stranger){
     });
 }
 
-// copy an image from "strangers" folder to "faces" one
+// upload an image in "faces" or "strangers" folder
+async function uploadScreenshot(url, width, height, name){
+    return new Promise( (resolve, reject) => {
+        fetch(`/strangers`, {
+            method: 'POST',
+            headers:{'Content-Type': 'application/json',},
+            body: JSON.stringify({"url": "url","width": width, "height": height, "name": name})})
+        .then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+// move an image from "strangers" folder to "faces" one
 async function saveStrangerImage(filename, name){
     return new Promise( (resolve, reject) => {
         fetch(`/faces/strangers`, {
@@ -234,8 +252,9 @@ export {
     getImage, 
     newProfile, 
     newProfileStatistics, 
-    saveStrangerImage, 
     uploadImage, 
+    uploadScreenshot, 
+    saveStrangerImage, 
     updateProfile, 
     updateProfileStatistics, 
     deleteImage, 

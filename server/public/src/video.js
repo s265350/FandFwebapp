@@ -7,18 +7,15 @@ function setup(){
     if (!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
         const videoSelect = document.getElementById('videoSelector');
         navigator.mediaDevices.enumerateDevices()
-            .then((deviceInfos) => {
-                deviceInfos.forEach( (deviceInfo) => {
-                    if (deviceInfo.kind === 'videoinput') {
+            .then((devices) => {
+                devices.forEach((device) => {
+                    if (device.kind === 'videoinput'){
                         const option = document.createElement('option');
-                        option.value = deviceInfo.deviceId;
-                        option.text = deviceInfo.label || 'camera ' + (videoSelect.length + 1);
+                        option.value = device.deviceId;
+                        option.text = device.label || 'Camera ' + (videoSelect.length + 1);
                         videoSelect.appendChild(option);
-                    } else {
-                        console.log('Found another kind of device: ', deviceInfo);
-                    }
-                });
-            })
+                    } else {console.log('Found another kind of device: ', device);}
+                });})
             .then(getStream)
             .catch((error) => {console.error('EnumerateDevices error: ', error)});
         videoSelect.addEventListener('change', getStream);
@@ -29,24 +26,23 @@ function setup(){
 
 function getStream(){
     if(window.stream) {window.stream.getTracks().forEach((track) => {track.stop();});}
-    if(document.getElementById('videoSelector').value !== "None")
-        navigator.mediaDevices.getUserMedia({video: {deviceId: {exact: document.getElementById('videoSelector').value}}})
+    if(document.getElementById('videoSelector').value != "None")
+        navigator.mediaDevices.getUserMedia({video: {deviceId: { exact: document.getElementById('videoSelector').value },}})
             .then((stream) => {
                 window.stream = stream; // make stream available to console
-                document.getElementById("video").srcObject = stream;
-            }).catch((error) => {console.error('Video stream error: ', error)});
+                document.getElementById("video").srcObject = stream;})
+            .catch((error) => {console.error('Video stream error: ', error)});
 }
 
 async function takeScreenshot(){
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.width = document.getElementById('video').videoWidth;
+    canvas.height = document.getElementById('video').videoHeight;
+    canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
     let files = await Api.getStrangers();
-    files = files.map(file => {return file.split('/')[file.split('/').length-1];});
     let name = "";
-    do{name = generateName(8);} while (files.includes(`/faces/strangers/${name}.png`));
-    await Api.uploadImage(canvas.toDataURL(), name, true);
+    do{name = generateName(8);} while (files.includes(name));
+    await Api.uploadScreenshot(canvas.toDataURL('image/png'), canvas.width, canvas.height, name);
 }
 
 function generateName(length) {
@@ -54,7 +50,7 @@ function generateName(length) {
     let randomName = "";
     for (let i = 0; i < length; ++i)
         randomName += charset.charAt(Math.floor(Math.random() * charset.length));
-    return randomName;
+    return randomName + '.png';
 }
 
 export {setup, takeScreenshot};
