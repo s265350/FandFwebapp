@@ -144,13 +144,15 @@ async function uploadImage(file, name, stranger){
     });
 }
 
-// upload an image in "faces" or "strangers" folder
+// upload an image in "strangers" folder
 async function uploadScreenshot(url, width, height, name){
+    const formData = new FormData();
+    formData.append("url", url);
+    formData.append("width", width);
+    formData.append("height", height);
+    formData.append("name", name);
     return new Promise( (resolve, reject) => {
-        fetch(`/strangers`, {
-            method: 'POST',
-            headers:{'Content-Type': 'application/json',},
-            body: JSON.stringify({"url": "url","width": width, "height": height, "name": name})})
+        fetch(`/screenshot`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {

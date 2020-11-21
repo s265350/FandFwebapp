@@ -126,8 +126,8 @@ app.post('/faces', [], (req, res) => {
 });
 
 // POST upload a new image in "strangers" folder
-// Request body: image url to upload and name given to it
-app.post('/strangers', [], (req, res) => {
+// Request body: image url to upload, width and height of the screenshot and the name given to it
+app.post('/screenshot', [], (req, res) => {
   if(!req.body.url || !req.body.width || !req.body.height || !req.body.name) res.status(400).end(`url: ${req.body.url};width: ${req.body.width};height: ${req.body.height};name: ${req.body.name}`);
   const canvas = createCanvas(req.body.width, req.body.height);
   const context = canvas.getContext('2d');
