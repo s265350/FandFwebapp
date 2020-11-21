@@ -8,7 +8,8 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     
-    <title>F&F Home</title>
+    <link rel="icon" type="image/svg" href="svg/logo.svg"/>
+    <title>F&F Recognition System</title>
 
     <!-- JavaScript (note the defer attribute) -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS, then Moment js -->
@@ -40,7 +41,7 @@
                 <div id="logoblock" class="row justify-content-center pb-5">
                     <a class="brand" href="index.html"><div class="col">
                         <img class="logo" src="svg/logo.svg"></img>
-                        <p class="text-light">F&F recognition system</p>
+                        <p class="text-light">Recognition System</p>
                     </div></a>
                     <a class="founder text-white-50" href="https://www.polito.it/" target="_blank">Politecnico di Torino </a>
                 </div>
@@ -57,9 +58,10 @@
             </nav>
             
             <main id="main" role="main" class="col-md-9 col-lg-10">
+                <select id="videoSelector" class="custom-select col-md-4 col-lg-3" style="position: fixed;right: 0;bottom: 0;z-index: 1;"><option>None</option></select>
                 <div id="videowrap">
                     <div class="embed-responsive embed-responsive-4by3" style="padding: 0!important;margin: 0!important;">
-                        <video id="webcam" autoplay class="embed-responsive-item"></video>
+                        <video id="video" autoplay class="embed-responsive-item"></video>
                     </div>
                 </div>
                 <div id="content"></div>

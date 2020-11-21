@@ -1,29 +1,25 @@
 import * as Api from './api.js';
+import * as Video from './video.js';
 import * as P_recognize from './page_recognize.js';
 import * as P_profile from './page_profile.js';
 
 window.addEventListener('load', () => {
-    /* LOGIN it would complicate the code and it's not mandatory for the system to work */
     // sidebar listeners
     document.getElementById("sideHome").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideHome").classList.add("active");loadHome();});
     document.getElementById("sideRecognize").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideRecognize").classList.add("active");loadRecognize();});
     document.getElementById("sideProfile").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideProfile").classList.add("active");loadProfile();});
     document.getElementById("sideAboutUs").addEventListener("click", () => {document.querySelectorAll(".nav-link").forEach(a => {a.classList.remove("active");});document.getElementById("sideAboutUs").classList.add("active");loadAboutUs();});
-    // webcam setup
-    const video = document.getElementById("webcam");
-    if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function (stream) { video.srcObject = stream; })
-            .catch(function (err0r) { console.log(`Video stream error: ${err0r}`); });
-    }
+    /* LOGIN it would complicate the code and it's not mandatory for the system to work */
     // init page
+    Video.setup();
     loadHome();
 });
 
 function loadHome(){
     // video css and listener
     document.getElementById("videowrap").classList.remove("video");
-    document.getElementById("webcam").removeEventListener("click", () => {loadHome()});
+    document.getElementById("video").removeEventListener("click", () => {loadHome()});
+    document.getElementById("video").addEventListener('click', () => {Video.takeScreenshot();});
     // clear page content
     document.getElementById("content").innerHTML = "";
 }
@@ -31,7 +27,8 @@ function loadHome(){
 async function loadRecognize(){
     // video css and listener
     document.getElementById("videowrap").classList.add("video");
-    document.getElementById("webcam").addEventListener("click", () => {loadHome()});
+    document.getElementById("video").removeEventListener('click', () => {Video.takeScreenshot();});
+    document.getElementById("video").addEventListener("click", () => {loadHome()});
     // clear page content
     const content = document.getElementById("content");content.innerHTML = "";
     // page header
@@ -45,7 +42,7 @@ async function loadRecognize(){
     container.appendChild(P_recognize.createRecognizeModal());
     container.appendChild(P_profile.createEditModal());
     const strangers = await Api.getStrangers();
-    strangers.forEach(stranger => {list.appendChild(P_recognize.recognizeListItem(stranger));});
+    for(let i=0; i<strangers.length; i++){list.appendChild(await P_recognize.recognizeListItem(strangers[i]));}
 }
 
 async function loadProfile(){
@@ -53,7 +50,8 @@ async function loadProfile(){
     const loggedProfile = await Api.getAdminProfile("Admin");
     // video css and listener
     document.getElementById("videowrap").classList.add("video");
-    document.getElementById("webcam").addEventListener("click", () => {loadHome()});
+    document.getElementById("video").removeEventListener('click', () => {Video.takeScreenshot();});
+    document.getElementById("video").addEventListener("click", () => {loadHome()});
     // clear page content
     const content = document.getElementById("content");content.innerHTML = "";
     // page header
@@ -72,7 +70,7 @@ async function loadProfile(){
     container.appendChild(document.createElement("hr"));
     const list = document.createElement("div");list.setAttribute("class", "card-columns");container.appendChild(list);
     const profiles = await Api.getAllProfiles();
-    profiles.forEach(profile => {if(loggedProfile.profileId !== profile.profileId)list.appendChild(P_profile.familyListItem(loggedProfile, profile));});
+    for(let i=0; i<profiles.length; i++) {if(loggedProfile.profileId !== profiles[i].profileId){list.appendChild(await P_profile.familyListItem(loggedProfile, profiles[i]));}}
     // modals
     container.appendChild(P_profile.createEditModal());
     container.appendChild(P_profile.createFamilyModal());
@@ -81,7 +79,8 @@ async function loadProfile(){
 async function loadAboutUs(){
     // video css and listener
     document.getElementById("videowrap").classList.add("video");
-    document.getElementById("webcam").addEventListener("click", () => {loadHome()});
+    document.getElementById("video").removeEventListener('click', () => {Video.takeScreenshot();});
+    document.getElementById("video").addEventListener("click", () => {loadHome()});
     // clear page content
     const content = document.getElementById("content");content.innerHTML = "";
     // page header
