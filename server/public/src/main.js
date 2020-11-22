@@ -22,6 +22,7 @@ function loadHome(){
     // video css and listener
     document.getElementById('videowrap').classList.remove('video');
     document.getElementById('video').removeEventListener('click', () => {loadHome()});
+    document.getElementById('video').addEventListener('click', () => {Video.takeScreenshot()});
     // clear page content
     document.getElementById('content').innerHTML = '';
 }

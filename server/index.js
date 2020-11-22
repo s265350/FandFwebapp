@@ -165,8 +165,8 @@ app.post('/faces/strangers', [], (req, res) => {
 app.put('/profiles/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateProfile(req.body)
-      .then( () => res.status(200).end() )
-      .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+    .then( () => res.status(200).end() )
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // PUT update a ProfileStatistics row
@@ -175,21 +175,48 @@ app.put('/profiles/:profileId', (req, res) => {
 app.put('/statistics/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateProfileStatistics(req.body)
-      .then( (result) => res.status(200).end() )
+      .then( () => res.status(200).end() )
       .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// DELETE delete an image in 'faces' or 'strangers' folder
+// DELETE delete an image in 'faces' folder
 // Request parameters: image name
 // Request body: boolean to say if is a stranger or not
 app.delete(`/faces/:filename`, (req, res) => {
-  if(!req.params.filename || !req.body.stranger) res.status(400).end();
-  let path = '';
-  if(req.body.stranger) path = '/strangers'
-  fs.unlink(`${__dirname}/faces${path}/${req.params.filename}`, (err) => {
+  if(!req.params.filename) res.status(400).end();
+  fs.unlink(`${__dirname}/faces/${req.params.filename}`, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
   });
+});
+
+// DELETE delete an image in 'strangers' folder
+// Request parameters: image name
+// Request body: boolean to say if is a stranger or not
+app.delete(`/strangers/:filename`, (req, res) => {
+  if(!req.params.filename) res.status(400).end();
+  fs.unlink(`${__dirname}/faces/strangers/${req.params.filename}`, (err) => {
+    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
+    res.status(200).end();
+  });
+});
+
+// DELETE delete a profile
+// Request parameters: profile ID
+app.delete(`/profiles/:profileId`, (req, res) => {
+  if(!req.params.profileId) res.status(400).end();
+  dao.deleteProfile(req.params.profileId)
+    .then( () => res.status(200).end() )
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// DELETE delete statistics for a profile
+// Request parameters: profile ID
+app.delete(`/statistics/:profileId`, (req, res) => {
+  if(!req.params.profileId) res.status(400).end();
+  dao.deleteProfileStatistics(req.params.profileId)
+    .then( () => res.status(200).end() )
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 /* Server Activation */

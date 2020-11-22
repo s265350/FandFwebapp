@@ -21,7 +21,7 @@ function createRecognizeModal(){
     const selection = document.createElement('div');selection.setAttribute('id', 'selection');selection.setAttribute('class', 'card-columns');div.appendChild(selection);
     // modal footer
     const footer = document.createElement('div');footer.setAttribute('class', 'modal-footer justify-content-between');content.appendChild(footer);
-    element = document.createElement('button');element.setAttribute('id', 'recognize_save');element.setAttribute('type', 'button');element.setAttribute('class', 'btn btn-outline-primary btn-rounded btn-md ml-4');element.setAttribute('data-dismiss', 'modal');element.setAttribute('data-target', '#recognize_modal');element.innerHTML = `<i class='fa fa-times-circle mr-2'></i>Close`;footer.appendChild(element);
+    element = document.createElement('button');element.setAttribute('id', 'recognize_save');element.setAttribute('role', 'delete');element.setAttribute('type', 'button');element.setAttribute('class', 'btn btn-outline-danger btn-rounded btn-md ml-4');element.setAttribute('data-dismiss', 'modal');element.setAttribute('data-target', '#recognize_modal');element.innerHTML = `<i class='fa fa-trash-alt mr-2'></i>Delete`;footer.appendChild(element);
     element = document.createElement('button');element.setAttribute('id', 'recognize_new');element.setAttribute('type', 'button');element.setAttribute('class', 'btn btn-outline-primary btn-rounded btn-md ml-4');element.setAttribute('data-dismiss', 'modal');element.setAttribute('data-toggle', 'modal');element.setAttribute('data-target', '#edit_modal');element.innerHTML = `<i class='fa fa-user-plus mr-2'></i>Create new profile`;footer.appendChild(element);
     return modal;
 }
@@ -50,7 +50,7 @@ async function populateRecognizeModal(imgName){
     for(let i=0; i<profiles.length; i++){document.getElementById('selection').appendChild(await profileListItem(profiles[i]));}
     // save button
     document.getElementById('recognize_save').addEventListener('click', () => {
-        submitRecognizeModal(imgName);
+        submitRecognizeModal(imgName, (document.getElementById('recognize_save').role === 'save'));
         clearRecognizeModal();
     });
     // new profile button
@@ -62,21 +62,28 @@ async function populateRecognizeModal(imgName){
 
 function clearRecognizeModal(){
     document.getElementById('selection').innerHTML = ``;
-    document.getElementById('recognize_save').innerHTML = `<i class='fa fa-times-circle mr-2'></i>Close`;
+    document.getElementById('recognize_save').setAttribute('role', 'delete');
+    document.getElementById('recognize_save').classList.remove('btn-outline-primary');
+    document.getElementById('recognize_save').classList.add('btn-outline-danger');
+    document.getElementById('recognize_save').innerHTML = `<i class='fa fa-trash-alt mr-2'></i>Delete`;
+    
 }
 
 // updates statistics and delete the image
-async function submitRecognizeModal(imgName){
-    let profileId = undefined;
-    document.getElementById('selection').childNodes.forEach(card => {if(card.classList.contains('selected')){profileId = card.getAttribute('id').split('_')[1];}});
-    if(profileId){
-        const profileStatistics = await Api.getProfileStatisticsById(profileId);
-        profileStatistics.faces++;
-        profileStatistics.unrecognized++;
-        await Api.updateProfileStatistics(profileStatistics);
-        await Api.deleteImage(imgName, true);
-        Main.loadRecognize();
+async function submitRecognizeModal(imgName, save){
+    if(save){
+        let profileId = undefined;
+        document.getElementById('selection').childNodes.forEach(card => {if(card.classList.contains('selected')){profileId = card.getAttribute('id').split('_')[1];}});
+        if(!profileId) return;
+        if(profileId){
+            const profileStatistics = await Api.getProfileStatisticsById(profileId);
+            profileStatistics.faces++;
+            profileStatistics.unrecognized++;
+            await Api.updateProfileStatistics(profileStatistics);
+        }
     }
+    await Api.deleteImage(imgName, true);
+    Main.loadRecognize();
 }
 
 // creates ad div html element containing the card image
@@ -88,8 +95,11 @@ async function profileListItem(profile){
         card.classList.toggle('border-primary');
         card.classList.toggle('selected');
         document.querySelector('#selection').childNodes.forEach(card => {if(card.getAttribute('id') !== `select_${profile.profileId}`){card.classList.remove('selected', 'border-primary');}});
-        document.getElementById('recognize_save').innerHTML = `<i class='fa fa-times-circle mr-2'></i>Close`;
-        document.querySelector('#selection').childNodes.forEach(card => {if(card.classList.contains('selected')){document.getElementById('recognize_save').innerHTML = `<i class='fa fa-save mr-2'></i>Save`;}});
+        document.getElementById('recognize_save').setAttribute('role', 'delete');
+        document.getElementById('recognize_save').classList.remove('btn-outline-primary');
+        document.getElementById('recognize_save').classList.add('btn-outline-danger');
+        document.getElementById('recognize_save').innerHTML = `<i class='fa fa-trash-alt mr-2'></i>Delete`;
+        document.querySelector('#selection').childNodes.forEach(card => {if(card.classList.contains('selected')){document.getElementById('recognize_save').setAttribute('role', 'save');document.getElementById('recognize_save').classList.remove('btn-outline-danger');document.getElementById('recognize_save').classList.add('btn-outline-primary');document.getElementById('recognize_save').innerHTML = `<i class='fa fa-save mr-2'></i>Save`;}});
     });
     const img = document.createElement('img');
     img.setAttribute('class', 'card-img');

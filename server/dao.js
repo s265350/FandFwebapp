@@ -179,3 +179,25 @@ exports.updateProfileStatistics = function(profileStatistics){
         });
     });
 }
+
+// delete a Profile row
+exports.deleteProfile = function(profileId){
+    return new Promise( (resolve, reject) => {
+        const sql = 'DELETE FROM profiles WHERE profileId=?';
+        db.run(sql, [profileId], (err) => {
+            if(err) reject(err);
+            resolve(null);
+        });
+    });
+}
+
+// delete a ProfileStatistics row
+exports.deleteProfileStatistics = function(profileId){
+    return new Promise( (resolve, reject) => {
+        const sql = 'DELETE FROM statistics WHERE profileId=?';
+        db.run(sql, [profileId], (err) => {
+            if(err) reject(err);
+            resolve(null);
+        });
+    });
+}

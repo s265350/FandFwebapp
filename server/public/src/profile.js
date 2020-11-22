@@ -1,7 +1,5 @@
 'use strict';
 
-import * as Api from './api.js';
-
 class Profile {
     constructor(firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar){
         this.profileId = ''; // profile id is set by the server, NOT at client side
