@@ -75,7 +75,7 @@ exports.getProfileById = function(id) {
 exports.getAdminProfile = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM profiles WHERE system = ?';
-        db.get(sql, ["Admin"], (err, row) => {
+        db.get(sql, ['Admin'], (err, row) => {
             if (err) {reject(err);return;}
             if (row == undefined || Array.isArray(row)) {resolve({});
             } else {
@@ -103,7 +103,7 @@ exports.getStatistics = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM statistics';
         db.all(sql, (err, rows) => {
-            if (err) {reject(err);return;}
+            if (err) reject(err);
             const statistics = rows.map((row) => ({profileId: row.profileId, faces: row.faces, unrecognized: row.unrecognized}));
             resolve(statistics);
         });
@@ -116,7 +116,7 @@ exports.getProfileStatisticsById = function(profileId) {
         const sql = 'SELECT * FROM statistics WHERE profileId=?';
         db.get(sql, [profileId], (err, row) => {
             if (err) {reject(err);return;}
-            if (row == undefined) {resolve({});
+            if (row == undefined) {resolve(null);
             } else {
                 const profileStatistics = {profileId: row.profileId, faces: row.faces, unrecognized: row.unrecognized};
                 resolve(profileStatistics);
@@ -131,9 +131,16 @@ exports.getProfileStatisticsById = function(profileId) {
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
+        // id must be a unique string of 6 random characters/numbers
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        do{
+            profile.profileId = '';
+            for (let i = 0; i < 6; i++) profile.profileId += charset.charAt(Math.floor(Math.random() * charset.length));
+        } while(this.getProfileById(profile.profileId) === null);
+        // save
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
-            if (err) {reject(err);return;}
-            resolve();
+            if (err) reject(err);
+            resolve(profile.profileId);
         });
     });
 };
@@ -143,7 +150,7 @@ exports.createProfileStatistics = function(profileStatistics) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO statistics (profileId, faces, unrecognized) VALUES(?,?,?)';
         db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized], function (err) {
-            if (err) {reject(err);return;}
+            if (err) reject(err);
             resolve();
         });
     });
