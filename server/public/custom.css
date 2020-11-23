@@ -23,7 +23,7 @@ b{font-size: 1.2em;font-weight: normal;}
 .show{visibility: visible;}
 
 /* Sidebar */
-.sidebar {/*position: fixed;*/top: 0;bottom: 0;left: 0;z-index: 1;min-height: 100vh;text-align: center;background-image: url('svg/sidemenu.svg');background-repeat: no-repeat;background-size: cover;}
+.sidebar {/*position: fixed;*/top: 0;bottom: 0;left: 0;z-index: 1;min-height: 100vh;text-align: center;background-image: url('svg/sidebar.svg');background-repeat: no-repeat;background-size: cover;}
 .sidebar-sticky{position: relative;top: 0;padding-top: .5rem;overflow-x: hidden;overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */}
 .sidebar .logo{max-width: 25%;}
 .sidebar .brand{font-size: 1.6em;font-weight: lighter;}

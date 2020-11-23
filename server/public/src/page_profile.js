@@ -84,7 +84,7 @@ function createEditModal(){
         else{document.getElementById("edit_system").classList.replace("border-warning", "border-success");}
     };
     input.appendChild(group);
-    element = document.createElement("option");element.setAttribute("value", "0");element.innerText = `Choose...*`;element.selected = true;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("id", "edit_system_option0");element.setAttribute("value", "0");element.innerText = `Choose...*`;element.selected = true;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "1");element.innerText = `Admin`;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "2");element.innerText = `Adult`;group.appendChild(element);
     element = document.createElement("option");element.setAttribute("value", "3");element.innerText = `Minor`;group.appendChild(element);
@@ -99,14 +99,11 @@ function createEditModal(){
     });
     // family role field
     group = document.createElement("select");group.setAttribute("id", "edit_family");group.setAttribute("class", "custom-select");input.appendChild(group);
-    element = document.createElement("option");element.setAttribute("value", "0");element.innerText = `Choose...`;element.selected = true;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "1");element.innerText = `Father`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "2");element.innerText = `Mother`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "3");element.innerText = `Son`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "4");element.innerText = `Daughter`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "5");element.innerText = `Male Friend`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "6");element.innerText = `Female Friend`;group.appendChild(element);
-    element = document.createElement("option");element.setAttribute("value", "7");element.innerText = `Other`;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("id", "edit_family_option0");element.setAttribute("value", "0");element.innerText = `Choose...`;element.selected = true;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("value", "1");element.innerText = `Parent`;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("value", "2");element.innerText = `Child`;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("value", "3");element.innerText = `Friend`;group.appendChild(element);
+    element = document.createElement("option");element.setAttribute("value", "4");element.innerText = `Other`;group.appendChild(element);
     div = document.createElement("div");div.setAttribute("class", "col-12");form.appendChild(div);
     // adv
     const span = document.createElement("span");span.setAttribute("id", "edit_notification_adv");span.setAttribute("class", "notification-adv text-warning");span.innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
@@ -116,8 +113,9 @@ function createEditModal(){
         document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;});
     div.appendChild(span);
     // modal footer
-    const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-start");content.appendChild(footer);
+    const footer = document.createElement("div");footer.setAttribute("class", "modal-footer justify-content-between");content.appendChild(footer);
     element = document.createElement("button");element.setAttribute("id", "edit_save");element.setAttribute("type", "button");element.setAttribute("class", "btn btn-outline-primary btn-rounded btn-md ml-4");element.innerHTML = `<i class="fa fa-save mr-2"></i>Save`;footer.appendChild(element);
+    element = document.createElement("button");element.setAttribute("id", "edit_delete");element.setAttribute("type", "button");element.setAttribute("class", "btn btn-outline-danger btn-rounded btn-md ml-4");element.innerHTML = `<i class="fa fa-trash-alt mr-2"></i>Delete`;footer.appendChild(element);
     return modal;
 }
 
@@ -140,13 +138,14 @@ async function populateEditModal(profile){
         if(profile.notificationsPhone){document.getElementById("edit_phonebutton").classList.replace("fa-bell-slash", "fa-bell");}
         else {document.getElementById("edit_phonebutton").classList.replace("fa-bell", "fa-bell-slash");}
         document.getElementById("edit_mail").value = profile.email;
-        if(profile.email != "" && profile.notificationsEmail){document.getElementById("edit_mailbutton").classList.replace("fa-bell-slash", "fa-bell");}
+        if(profile.email != '' && profile.notificationsEmail){document.getElementById("edit_mailbutton").classList.replace("fa-bell-slash", "fa-bell");}
         else {document.getElementById("edit_mailbutton").classList.replace("fa-bell", "fa-bell-slash");}
-        document.getElementById("edit_system").childNodes.forEach(child => {if(child.innerText === profile.system)document.getElementById("edit_system").value = child.value;});
+        document.getElementById("edit_system").childNodes.forEach(child => {if(child.innerText === profile.system){document.getElementById("edit_system").value = child.value;}else if(child.innerText === 'Choose...*'){document.getElementById("edit_system").removeChild(child)}});
         document.getElementById("edit_system").classList.replace("border-warning", "border-success");
-        document.getElementById("edit_family").childNodes.forEach(child => {if(child.innerText === profile.family)document.getElementById("edit_family").value = child.value;});
+        document.getElementById("edit_family").childNodes.forEach(child => {if(child.innerText === profile.family){document.getElementById("edit_family").value = child.value;}else if(child.innerText === 'Choose...' && profile.family != ''){document.getElementById("edit_family").removeChild(child)}});
     }
-    document.getElementById("edit_save").addEventListener("click", () => {submitEditModal(profile);});
+    document.getElementById("edit_save").addEventListener("click", () => {submitEditModal(profile, true);});
+    document.getElementById("edit_delete").addEventListener("click", () => {submitEditModal(profile, false);});
     document.getElementById("edit_upload").addEventListener('change', readFile, false);
 }
 
@@ -185,60 +184,76 @@ function clearEditModal(){
     document.getElementById("edit_phonebutton").classList.replace("fa-bell-slash", "fa-bell");
     document.getElementById("edit_mail").value = ``;
     document.getElementById("edit_mailbutton").classList.replace("fa-bell-slash", "fa-bell");
+    if(!document.getElementById("edit_system_option0")){let element = document.createElement("option");element.setAttribute("id", "edit_system_option0");element.setAttribute("value", "0");element.innerText = `Choose...*`;element.selected = true;document.getElementById("edit_system").appendChild(element);}
     document.getElementById("edit_system").value = 0;
     document.getElementById("edit_system").classList.replace("border-success", "border-warning");
+    if(!document.getElementById("edit_family_option0")){let element = document.createElement("option");element.setAttribute("id", "edit_family_option0");element.setAttribute("value", "0");element.innerText = `Choose...`;element.selected = true;document.getElementById("edit_family").appendChild(element);}
     document.getElementById("edit_family").value = 0;
     document.getElementById("edit_notification_adv").classList.remove("show");
 }
 
-async function submitEditModal(profile){
-    const updateProfile = !(typeof profile === 'string' || profile instanceof String);
-    if(document.getElementById("edit_firstname").classList.contains("border-warning") || document.getElementById("edit_phone").classList.contains("border-warning") || document.getElementById("edit_system").classList.contains("border-warning")){
-        document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
-        return;
-    }
-    // create a rofile object (system, family and avatar fields are computed below)
-    const newProfile = new Profile(
-        document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
-        document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
-        document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-        document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),profile
-    );
-    // avatar
-    if(document.getElementById('edit_upload').files[0]){
-        newProfile.avatar = await Api.uploadImage(document.getElementById('edit_upload').files[0], `${document.getElementById("edit_firstname").value}${document.getElementById("edit_phone").value}`, false);
-        newProfile.avatar = newProfile.avatar.directory;
-        if(updateProfile) await Api.deleteImage(profile.avatar, false);
-        else await Api.deleteImage(profile, true);
-    } else {
-        if(updateProfile) newProfile.avatar = profile.avatar;
-        else {
-            await Api.saveStrangerImage(profile, newProfile.profileId);
-            newProfile.avatar = newProfile.profileId + profile.split('.')[profile.split('.').length-1];
+async function submitEditModal(profile, save){
+    const update = !(typeof profile === 'string' || profile instanceof String);
+    if(!save){
+        let avatar = profile;
+        if(update) {
+            avatar = profile.avatar;
+            await Api.deleteProfileStatistics(profile.profileId);
+            await Api.deleteProfile(profile.profileId);
         }
-    }
-    // system role
-    document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
-    // family role
-    document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)newProfile.family = child.innerText;});
-    // hide modal
-    $("#edit_modal").modal("toggle");
-    // update database and reload th page
-    if(updateProfile){
-        await Api.updateProfile(newProfile);
-        Main.loadProfile();
+        await Api.deleteImage(avatar, !update);
     } else {
-        await Api.newProfile(newProfile);
-        await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
-        Main.loadRecognize();
-    };
+        if(document.getElementById("edit_firstname").classList.contains("border-warning") || document.getElementById("edit_phone").classList.contains("border-warning") || document.getElementById("edit_system").classList.contains("border-warning")){
+            document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
+            return;
+        }
+        // create a rofile object (system, family and avatar fields are computed below)
+        const newProfile = new Profile(
+            document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
+            document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
+            document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
+            document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),profile
+        );
+        // system role (mandatory field)
+        document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
+        // family role
+        document.getElementById("edit_family").childNodes.forEach(child => {if(document.getElementById("edit_family").value === child.value)newProfile.family = child.innerText;});
+        // get id by creating new profile and statistics or getting it from profile parameter
+        if(update){
+            newProfile.profileId = profile.profileId;
+        } else {
+            const json = await Api.newProfile(newProfile);
+            newProfile.profileId = json.profileId;
+            await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
+        }
+        // avatar
+        if(document.getElementById('edit_upload').files[0]){
+            newProfile.avatar = await Api.uploadImage(document.getElementById('edit_upload').files[0], newProfile.profileId, false);
+            newProfile.avatar = newProfile.avatar.directory;
+            if(update) await Api.deleteImage(profile.avatar, false);
+            else await Api.deleteImage(profile, true);
+        } else {
+            if(update) newProfile.avatar = profile.avatar;
+            else {
+                await Api.saveStrangerImage(profile, newProfile.profileId);
+                newProfile.avatar = `${newProfile.profileId}.${profile.split('.')[profile.split('.').length-1]}`;
+            }
+        }
+        // update database
+        await Api.updateProfile(newProfile);
+    }
+    // toggle modal
+    $("#edit_modal").modal("toggle");
+    // reload the page
+    if(update) Main.loadProfile();
+    else Main.loadRecognize();
 }
 
 // creates ad div html element containing the profile
 function createProfile(id){
     const profile = document.createElement("div");profile.setAttribute("id", id);profile.setAttribute("class", "row align-items-center justify-content-start");
     let div = document.createElement("div");div.setAttribute("id", `${id}_avatar`);div.setAttribute("class", "card overflow-hidden col-md-4 col-lg-3 avatar");profile.appendChild(div);
-    let element = document.createElement("img");element.setAttribute("id", `${id}_image`);element.setAttribute("class", "card-img img-responsive");div.appendChild(element);
+    let element = document.createElement("img");element.setAttribute("id", `${id}_image`);element.setAttribute("class", "card-img img-responsive");element.setAttribute("src", "svg/avatar.svg");div.appendChild(element);
     div = document.createElement("ul");div.setAttribute("class", "col-md-8 col-lg-9 justify-content-start");profile.appendChild(div);
     element = document.createElement("li");div.appendChild(element);
     let span = document.createElement("span");span.setAttribute("id", `${id}_notifications_main`);span.setAttribute("class", "notification notification-main mb-2");span.classList.add("text-secondary");span.innerHTML = `<i class="fa fa-bell-slash mr-3"></i>`;element.appendChild(span);
@@ -284,12 +299,12 @@ async function populateProfile(loggedProfile, profile){
     const image = await Api.getImage(profile.avatar, false);
     document.getElementById(`${id}_image`).setAttribute("src", image);
     notificationsPhoneText.innerText = profile.phone;
-    if(profile.email == "") notificationsEmail.setAttribute("display", "none"); else notificationsEmailText.innerText = profile.email;
+    if(profile.email === "") notificationsEmail.style.visibility = "hidden"; else notificationsEmailText.innerText = profile.email;
     if(profile.notifications){notificationsMain.classList.replace("text-secondary", "text-primary");notificationsMain.firstChild.classList.replace("fa-bell-slash", "fa-bell");showAdv("warning", notificationsMain.getAttribute("id").split("_")[0]);}
     if(profile.notificationsPhone){notificationsPhone.classList.replace("text-secondary", "text-primary");notificationsPhone.firstChild.classList.replace("fa-phone-slash", "fa-phone");}
     if(profile.notificationsEmail){notificationsEmail.classList.replace("text-secondary", "text-primary");notificationsEmail.firstChild.classList.replace("fa-envelope-open", "fa-envelope");}
     profileSystem.innerText = profile.system;
-    if(profile.family == "") profileFamily.setAttribute("style", "visibility: hidden"); else profileFamily.innerText = profile.family;
+    if(profile.family === "") profileFamily.style.visibility = "hidden"; else profileFamily.innerText = profile.family;
     // listeners
     notificationsMain.addEventListener("click", () => {
         if(notificationsMain.firstChild.classList.contains("fa-bell")){
@@ -308,6 +323,7 @@ async function populateProfile(loggedProfile, profile){
         }
         const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
             !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
+        newProfile.profileId = profile.profileId;
         Api.updateProfile(newProfile);
         showAdv("warning", id);
         if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
@@ -323,6 +339,7 @@ async function populateProfile(loggedProfile, profile){
             }
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
+            newProfile.profileId = profile.profileId;
             Api.updateProfile(newProfile);
             showAdv("warning", id);
             if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
@@ -341,6 +358,7 @@ async function populateProfile(loggedProfile, profile){
             }
             const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
+            newProfile.profileId = profile.profileId;
             Api.updateProfile(newProfile);
             showAdv("warning", id);
             if(id === "profile")loggedProfile = newProfile;else profile = newProfile;
@@ -417,7 +435,7 @@ function createFamilyModal(){
     // modal header
     const header = document.createElement("div");header.setAttribute("class", "modal-header");content.appendChild(header);
     const title = document.createElement("h5");title.setAttribute("id", "family_title");title.setAttribute("class", "modal-title title");header.appendChild(title);
-    let element = document.createElement("button");element.setAttribute("id", "family_close");element.setAttribute("class", "close");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("aria-label", "Close");element.innerHTML = `<span aria-hidden="true">&times;</span>`;header.appendChild(element);
+    let element = document.createElement("button");element.setAttribute("id", "family_close");element.setAttribute("class", "close");element.setAttribute("type", "button");element.setAttribute("data-dismiss", "modal");element.setAttribute("aria-label", "Close");element.innerHTML = `<span aria-hidden="true">&times;</span>`;element.addEventListener("click", () => {clearFamilyModal();});header.appendChild(element);
     // modal body
     const body = document.createElement("div");body.setAttribute("class", "modal-body");content.appendChild(body);
     let div = document.createElement("div");div.setAttribute("class", "p-2 m-2");body.appendChild(div);
@@ -433,7 +451,12 @@ async function populateFamilyModal(loggedProfile, profile){
     document.getElementById("family_title").innerHTML = `<i class="fa fa-user mr-2"></i>${profile.firstName} ${profile.lastName}`;
     await populateProfile(loggedProfile, profile);
     await populateProfileAccuracy(profile.profileId, "family");
-    document.getElementById("family_edit").addEventListener("click", () => {populateEditModal(profile);});
+    document.getElementById("family_edit").addEventListener("click", () => {clearFamilyModal();populateEditModal(profile);});
+}
+
+function clearFamilyModal(){
+    document.getElementById("container").removeChild(document.getElementById("family_modal"));
+    document.getElementById("container").appendChild(createFamilyModal());
 }
 
 export {createEditModal, populateEditModal, createProfile, populateProfile, createProfileAccuracy, populateProfileAccuracy, familyListItem, createFamilyModal};

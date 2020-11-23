@@ -2,7 +2,7 @@
 
 class Profile {
     constructor(firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar){
-        this.profileId = [firstName, phone].join(""); // id is created concatenatig name and phone fields
+        this.profileId = ''; // profile id is set by the server, NOT at client side
         this.firstName = firstName;
         this.lastName = lastName;
         this.phone = phone;

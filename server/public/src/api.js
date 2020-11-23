@@ -96,7 +96,7 @@ async function newProfile(profile) {
             headers:{'Content-Type': 'application/json',},
             body: JSON.stringify(profile),
         }).then( (response) => {
-            if(response.ok) resolve(null);
+            if(response.ok) resolve(response.json());
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
@@ -225,8 +225,10 @@ async function updateProfileStatistics(profileStatistics) {
 
 // delete an image in "faces" or "strangers" folder
 async function deleteImage(filename, stranger){
+    let path = 'faces';
+    if(stranger) path = 'strangers';
     return new Promise( (resolve, reject) => {
-        fetch(`/faces/${filename}`, {
+        fetch(`/${path}/${filename}`, {
             method: 'DELETE',
             headers:{'Content-Type': 'application/json',},
             body: JSON.stringify({"stranger": stranger}),
@@ -241,7 +243,35 @@ async function deleteImage(filename, stranger){
     });
 }
 
-//TODO: delete Profiles and ProfileStatistics
+// delete a profile
+async function deleteProfile(profileId){
+    return new Promise( (resolve, reject) => {
+        fetch(`/profiles/${profileId}`, {method: 'DELETE',})
+            .then( (response) => {
+                if(response.ok) resolve(null);
+                else {
+                    response.json()
+                        .then( (obj) => {reject(obj);} ) // error msg in the response body
+                        .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+                }
+            }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+// delete statistics of a profile
+async function deleteProfileStatistics(profileId){
+    return new Promise( (resolve, reject) => {
+        fetch(`/statistics/${profileId}`, {method: 'DELETE',})
+            .then( (response) => {
+                if(response.ok) resolve(null);
+                else {
+                    response.json()
+                        .then( (obj) => {reject(obj);} ) // error msg in the response body
+                        .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+                }
+            }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
 
 export {
     getAllProfiles, 
@@ -260,4 +290,6 @@ export {
     updateProfile, 
     updateProfileStatistics, 
     deleteImage, 
+    deleteProfile, 
+    deleteProfileStatistics, 
 };
