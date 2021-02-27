@@ -50,7 +50,7 @@ async function populateRecognizeModal(imgName){
     for(let i=0; i<profiles.length; i++){document.getElementById('selection').appendChild(await profileListItem(profiles[i]));}
     // save button
     document.getElementById('recognize_save').addEventListener('click', () => {
-        submitRecognizeModal(imgName, (document.getElementById('recognize_save').role === 'save'));
+        submitRecognizeModal(imgName, (document.getElementById('recognize_save').getAttribute('role') === 'save'));
         clearRecognizeModal();
     });
     // new profile button
@@ -75,12 +75,10 @@ async function submitRecognizeModal(imgName, save){
         let profileId = undefined;
         document.getElementById('selection').childNodes.forEach(card => {if(card.classList.contains('selected')){profileId = card.getAttribute('id').split('_')[1];}});
         if(!profileId) return;
-        if(profileId){
-            const profileStatistics = await Api.getProfileStatisticsById(profileId);
-            profileStatistics.faces++;
-            profileStatistics.unrecognized++;
-            await Api.updateProfileStatistics(profileStatistics);
-        }
+        const profileStatistics = await Api.getProfileStatisticsById(profileId);
+        profileStatistics.faces++;
+        profileStatistics.unrecognized++;
+        await Api.updateProfileStatistics(profileStatistics);
     }
     await Api.deleteImage(imgName, true);
     Main.loadRecognize();

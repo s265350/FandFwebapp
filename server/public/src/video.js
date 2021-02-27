@@ -9,9 +9,11 @@ Promise.all([
     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
     faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
     faceapi.nets.ssdMobilenetv1.loadFromUri('/models')
-]).then(getStream)
+])
 
-const video = document.getElementById('video')
+let detectionInterval;
+let faceMatcherProfiles;
+let faceMatcherStrangers;
 
 async function setup(){
     // the user is free to choose any video input attached to the device
@@ -26,8 +28,11 @@ async function setup(){
         .then(getStream)
         .catch((error) => {console.error('EnumerateDevices error: ', error)});
     document.getElementById('videoSelector').addEventListener('change', getStream);
-    video.addEventListener('mousedown', () => {video.style.opacity = 0.3;});
-    video.addEventListener('mouseup', () => {video.style.opacity = 1;});
+    document.getElementById('video').addEventListener('mousedown', () => {document.getElementById('video').style.opacity = 0.3;});
+    document.getElementById('video').addEventListener('mouseup', () => {document.getElementById('video').style.opacity = 1;});
+    //carico descriptor da immagini etichettate
+    faceMatcherProfiles = await getProfileFaceMatcher();
+    faceMatcherStrangers = await getStrangersFaceMatcher();
 }
 
 function getStream(){
@@ -36,100 +41,88 @@ function getStream(){
         navigator.mediaDevices.getUserMedia({video: {deviceId: { exact: document.getElementById('videoSelector').value },}})
             .then((stream) => {
                 window.stream = stream; // make stream available to console
-                video.srcObject = stream;})
+                document.getElementById('video').srcObject = stream;})
             .catch((error) => {console.error('Video stream error: ', error)});
 }
 
 //individua volto e mostra i Landmarks, se lo porto in getStream riquadri multipli!!
-video.addEventListener('play', async () => {
-    const canvas = faceapi.createCanvasFromMedia(video)
-    document.body.append(canvas)
-    const displaySize = { width: video.width, height: video.height }
-    faceapi.matchDimensions(canvas, displaySize)
-    //carico descriptor da immagini etichettate
-    const labeledFaceDescriptors = await loadLabeledImages()
-    const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6)
-    const labeledStrangersDescriptors = await loadLabeledStrangers()
-    const faceMatcherStrangers = new faceapi.FaceMatcher(labeledStrangersDescriptors, 0.6)
-
-    setInterval(async () => { //individuo volto e faccio matching
-        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors()
-        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-        const resizedDetections = faceapi.resizeResults(detections, displaySize)
-        const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor))
-        results.forEach((result, i) => { //disegno riquadro e nome attorno al volto
+document.getElementById('video').addEventListener('play', async () => {
+    const canvas = faceapi.createCanvasFromMedia(document.getElementById('video'));
+    document.body.append(canvas);
+    const displaySize = { width: document.getElementById('video').videoWidth, height: document.getElementById('video').videoHeight }
+    faceapi.matchDimensions(canvas, displaySize);
+    console.log(`faces detection started`);
+    detectionInterval = setInterval(async () => { //individuo volto e faccio matching
+        const detections = await faceapi.detectAllFaces(document.getElementById('video'), new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
+        console.log(`detected ${detections.length} faces`);
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+        const results = resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor));
+        results.forEach(async (result, i) => { //disegno riquadro e nome attorno al volto
+            new faceapi.draw.DrawBox(resizedDetections[i].detection.box, { label: result.toString().split(' ')[0] }).draw(canvas);
             if (result.toString().split(' ')[0] == 'unknown') {
-                setInterval(async () => { //individuo volto e faccio matching
-                    const detectionsStranger = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors()
-                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-                    const resizedDetectionsStranger = faceapi.resizeResults(detectionsStranger, displaySize)
-                    const resultsStranger = resizedDetectionsStranger.map(e => faceMatcherStrangers.findBestMatch(e.descriptor))
-                    resultsStranger.forEach((resultS, j) => {
-                        if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot()}
-                        const boxS = resizedDetectionsStranger[j].detection.box
-                        const drawBox = new faceapi.draw.DrawBox(boxS, { label: resultS.toString().split(' ')[0] })
-                        drawBox.draw(canvas)
-                    })
-                }, 100)
-                /*const box = resizedDetections[i].detection.box
-                const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString().split(' ')[0] })
-                drawBox.draw(canvas)*/
-            } else {
-                const box = resizedDetections[i].detection.box
-                const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString().split(' ')[0] })
-                drawBox.draw(canvas)
+                const resultsStranger = resizedDetections.map(e => faceMatcherStrangers.findBestMatch(e.descriptor));
+                resultsStranger.forEach((resultS, j) => {if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot()}});
             }
         })
     }, 100)
 })
 
-async function loadLabeledImages() {
+document.getElementById('video').addEventListener('suspend', () => {
+    clearInterval(detectionInterval);
+    document.getElementById('video').pause();
+})
+
+async function getProfileFaceMatcher() {
     //etichetto foto
-    const profiles = await Api.getAllProfiles()
-    return Promise.all(
+    const profiles = await Api.getAllProfiles();
+    const labeledFaceDescriptors = await Promise.all(
         profiles.map(async profile => {
             const descriptions = []
             const img = await faceapi.fetchImage(await Api.getImage(profile.avatar, false))
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            if (!detections) {throw new Error(`no faces detected for ${profile.firstName}`)}
-            descriptions.push(detections.descriptor)
-            return new faceapi.LabeledFaceDescriptors(profile.firstName, descriptions)
+            if (!detections) {console.log(`no faces detected for ${profile.firstName}`)}
+            else descriptions.push(detections.descriptor)
+            return new faceapi.LabeledFaceDescriptors(profile.firstName, descriptions);
         })
     )
+    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0) return undefined;
+    return new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
 }
 
-
-async function loadLabeledStrangers() { //etichetto foto stranieri
+async function getStrangersFaceMatcher() { //etichetto foto stranieri
     const strangers = await Api.getStrangers()
-    return Promise.all(
+    const labeledFaceDescriptors = await Promise.all(
         strangers.map(async stranger => {
             const descriptions = []
             const img = await faceapi.fetchImage(await Api.getImage(stranger, true))
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            if (!detections) {throw new Error(`no faces detected for ${stranger}`)}
-            descriptions.push(detections.descriptor)
-            return new faceapi.LabeledFaceDescriptors(stranger, descriptions)
+            if (!detections) {console.log(`no faces detected for ${stranger}`);await Api.deleteImage(stranger, true);}
+            else descriptions.push(detections.descriptor)
+            return new faceapi.LabeledFaceDescriptors(stranger, descriptions);
         })
     )
+    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0) return undefined;
+    return new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
 }
 
 async function takeScreenshot(){
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.width = document.getElementById('video').videoWidth;
+    canvas.height = document.getElementById('video').videoHeight;
+    canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
     let strangers = await Api.getStrangers();
     let name = '';
     do{name = generateName();} while (strangers.includes(name));
     await Api.uploadScreenshot(canvas.toDataURL('image/png'), canvas.width, canvas.height, name);
+    faceMatcherStrangers = await getStrangersFaceMatcher();
 }
 
 function generateName() {
     // name must be a unique string of 8 random characters/numbers
     let charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let randomName = '';
-    for (let i = 0; i < 8; ++i)
-        randomName += charset.charAt(Math.floor(Math.random() * charset.length));
+    for (let i = 0; i < 8; ++i) randomName += charset.charAt(Math.floor(Math.random() * charset.length));
     return randomName + '.png';
 }
 
