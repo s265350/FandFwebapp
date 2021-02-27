@@ -13,7 +13,23 @@ window.addEventListener('load', () => {
     // init page
     Video.setup();
     loadHome();
+    // Check if the browser supports notifications and ask the user for permission
+    if (!("Notification" in window)) alert("This browser does not support desktop notification");
+    else if (Notification.permission !== "denied") Notification.requestPermission();
 });
+
+function strangerNotification(imageURL){
+    if (Notification.permission === 'granted'){
+        console.log(`NOTIFICATION IMAGE URL ${imageURL}`);
+        const notification = new Notification(`Attention! A stranger was detected in your house!`, {
+            body = `Don't worry! An image of his face was saved`,
+            icon = `../svg/logo.png`,
+            badge = `../svg/logo.png`,
+            image = imageURL
+        });
+        notification.onclick = function() {loadRecognize();};
+    }
+}
 
 function loadHome(){
     // sidemenu update
@@ -117,4 +133,4 @@ async function loadAboutUs(){
     div.appendChild(element);
 }
 
-export {loadRecognize, loadProfile};
+export {loadRecognize, loadProfile, strangerNotification};

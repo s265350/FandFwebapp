@@ -3,6 +3,7 @@
 'use strict';
 
 import * as Api from './api.js';
+import * as Main from './main.js';
 
 Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
@@ -111,6 +112,7 @@ async function takeScreenshot(){
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
+    Main.strangerNotification(canvas.toDataURL('image/png'));
     let strangers = await Api.getStrangers();
     let name = '';
     do{name = generateName();} while (strangers.includes(name));

@@ -7,11 +7,13 @@ const express = require('express');
 const fileupload = require('express-fileupload');
 const fs = require('fs');
 const dao = require('./dao.js');
+require('dotenv').config()
+const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const { createCanvas, loadImage } = require('canvas')
 
 /* App Variables */
 const app = express();
-const port = process.env.PORT || '8000';
+const port = process.env.PORT || '4000';
 
 /* Process body content */
 app.use(express.json(),fileupload());
@@ -156,6 +158,25 @@ app.post('/faces/strangers', [], (req, res) => {
   fs.unlink(oldPath, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
+  });
+});
+
+// POST email
+// Request parameters: 
+// Request body: email address, name, subject, message
+app.post( '/strangers/sendemail/', function(req, res){
+  if(!req.body.email || !req.body.name || !req.body.subject || !req.body.message) res.status(400).end();
+  // eventual spam protection or checks. 
+  mandrill('/messages/send', {
+    message: {
+        to: [{email: req.body.email , name: req.body.name}],
+        from_email: process.env.MAILCHIMP_EMAIL,
+        subject: req.body.subject,
+        text: req.body.message
+    }
+  }, function(error, response){
+    if (error) console.log( JSON.stringify(error) ); // uh oh, there was an error
+    else console.log(response); // everything's good, lets see what mandrill said
   });
 });
 
