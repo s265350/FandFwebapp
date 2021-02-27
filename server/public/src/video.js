@@ -112,11 +112,12 @@ async function takeScreenshot(){
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
-    Main.strangerNotification(canvas.toDataURL('image/png'));
+    const imageBase64 = canvas.toDataURL('image/png');
+    Main.strangerNotification(imageBase64);
     let strangers = await Api.getStrangers();
     let name = '';
     do{name = generateName();} while (strangers.includes(name));
-    await Api.uploadScreenshot(canvas.toDataURL('image/png'), canvas.width, canvas.height, name);
+    await Api.uploadScreenshot(imageBase64, canvas.width, canvas.height, name);
     faceMatcherStrangers = await getStrangersFaceMatcher();
 }
 

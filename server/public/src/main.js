@@ -18,17 +18,22 @@ window.addEventListener('load', () => {
     else if (Notification.permission !== "denied") Notification.requestPermission();
 });
 
-function strangerNotification(imageURL){
-    if (Notification.permission === 'granted'){
-        console.log(`NOTIFICATION IMAGE URL ${imageURL}`);
-        const notification = new Notification(`Attention! A stranger was detected in your house!`, {
-            body = `Don't worry! An image of his face was saved`,
-            icon = `../svg/logo.png`,
-            badge = `../svg/logo.png`,
-            image = imageURL
+async function strangerNotification(imageBase64){
+    const loggedProfile = await Api.getAdminProfile('Admin');
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    if (Notification.permission === 'granted' && loggedProfile.notifications){
+        const notification = new Notification(subject, {
+            body: "Don't worry! An image of his face was saved",
+            icon: "../svg/logo.png",
+            badge: "../svg/logo.png",
+            image: imageBase64
         });
         notification.onclick = function() {loadRecognize();};
     }
+    // for these is necessary to create an .env file and insert the credentials for Mandrill and Twilio
+    //if(loggedProfile.notificationsEmail) await Api.sendEmailNotification(loggedProfile.email, loggedProfile.firstName, subject, message, imageBase64);
+    //if(loggedProfile.notificationsPhone) await Api.sendSmsNotification(loggedProfile.phone, loggedProfile.firstName, subject, message, imageBase64);
 }
 
 function loadHome(){
