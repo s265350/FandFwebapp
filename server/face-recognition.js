@@ -52,6 +52,7 @@ exports.getStrangersFaceMatcher = function() {
 }
 
 exports.identify = function(image) {
+    // return an object with the name id of the face and the box sizes that contains it
     if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) {return;}
     const displaySize = { width: image.width, height: image.height };
     faceapi.matchDimensions(image, displaySize);

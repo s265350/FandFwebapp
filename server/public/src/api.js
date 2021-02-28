@@ -145,11 +145,9 @@ async function uploadImage(file, name, stranger){
 }
 
 // upload an image in "faces" folder
-async function uploadScreenshot(imageBase64, width, height){
+async function uploadScreenshot(imageBase64){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
-    formData.append("width", width);
-    formData.append("height", height);
     return new Promise( (resolve, reject) => {
         fetch(`/screenshot`, {method: 'POST', body: formData})
         .then( (response) => {

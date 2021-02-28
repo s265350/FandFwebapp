@@ -63,7 +63,7 @@ async function takeScreenshot(video){
     if (notificationEnabled == true) Main.pushNotification(imageBase64);
     //await Main.emailNotification(imageBase64); // must be activated inserting credentials
     //await Main.smsNotification(imageBase64); // must be activated inserting credentials*/
-    await Api.uploadScreenshot(canvas.toDataURL('image/png'), canvas.width, canvas.height);
+    await Api.uploadScreenshot(canvas.toDataURL('image/png'));
 }
 
 export {setup, takeScreenshot};

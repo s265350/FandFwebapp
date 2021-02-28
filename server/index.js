@@ -140,20 +140,18 @@ app.post('/screenshot', [], (req, res) => {
     .then( (newId) => {
         loadImage(req.body.imageBase64)
           .then(image => {
-            const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
-            canvas.getContext('2d').drawImage(image, 0, 0);
-            const buffer = canvas.toBuffer('image/png');
-            fs.writeFileSync(`${__dirname}/faces/${newId}.png`, buffer);
-            return image;})
-          .then(image => {
             const results = await facerecognition.identify(image);
             results.forEach(result => {
+              const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
+              canvas.getContext('2d').drawImage(image, 0, 0);
+              const buffer = canvas.toBuffer('image/png');
+              fs.writeFileSync(`${__dirname}/faces/${newId}.png`, buffer);
               if(result.name == 'unknown'){}
               else {}
             });
           });
         res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({ status: 'success', newId: newId}));
+        res.end(JSON.stringify({ status: 'success', result: newId}));
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
