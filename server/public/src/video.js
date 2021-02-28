@@ -53,15 +53,15 @@ function getStream(){
 
 //individua volto
 document.getElementById('video').addEventListener('play', async () => {
-    const canvas = faceapi.createCanvasFromMedia(document.getElementById('video'));
-    document.body.append(canvas);
+    //const canvas = faceapi.createCanvasFromMedia(document.getElementById('video'));
+    //document.body.append(canvas);
     const displaySize = { width: document.getElementById('video').videoWidth, height: document.getElementById('video').videoHeight }
     faceapi.matchDimensions(document.getElementById('video'), displaySize);
     console.log(`faces detection started`);
     detectionInterval = setInterval(async () => { //individuo volto e faccio matching
         const detections = await faceapi.detectAllFaces(document.getElementById('video')).withFaceLandmarks().withFaceDescriptors();
-        console.log(`detected ${detections.length} faces`);
-        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        //console.log(`detected ${detections.length} faces`);
+        //canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
         const results = resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor));
         results.forEach(async (result, i) => {
@@ -80,7 +80,7 @@ document.getElementById('video').addEventListener('play', async () => {
                 if(stats) await Api.updateProfileStatistics(stats);
                 profiles.forEach(p => {if(p.profileId === name)name = p.firstName;});
             }
-            new faceapi.draw.DrawBox(resizedDetections[i].detection.box, { label: name }).draw(canvas);
+            //new faceapi.draw.DrawBox(resizedDetections[i].detection.box, { label: name }).draw(canvas);
         })
     }, 1000)
 })
@@ -128,8 +128,11 @@ async function takeScreenshot(startx, starty, width, height){
     canvas.height = height;
     canvas.getContext('2d').drawImage(document.getElementById('video'), startx, starty, width, height, 0, 0, width, height);
     const imageBase64 = canvas.toDataURL('image/png');
-    console.log("notification");
-    Main.pushNotification(imageBase64);
+    console.log("notification sent");
+    // for now notifications are sent only to the admin (because is the only one that can "log in" and email and sms are not set)
+    let notificationEnabled = false;
+    profiles.forEach(p => {if (p.system === 'Admin' && p.notifications == true)notificationEnabled = true;});
+    if (notificationEnabled == true) Main.pushNotification(imageBase64);
     //await Main.emailNotification(imageBase64); // must be activated inserting credentials
     //await Main.smsNotification(imageBase64); // must be activated inserting credentials
     let name = '';
