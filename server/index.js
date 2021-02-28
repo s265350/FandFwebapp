@@ -8,6 +8,7 @@ const fileupload = require('express-fileupload');
 const fs = require('fs');
 const dao = require('./dao.js');
 require('dotenv').config()
+const facerecognition = require('./face-recognition.js');
 const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const { createCanvas, loadImage } = require('canvas')
@@ -21,7 +22,7 @@ app.use(express.json(),fileupload());
 
 /* Routes Definitions */
 app.use(express.static('public'));
-app.get('/', (req, res) => res.redirect('/index.html'));
+app.get('/', (req, res) => res.redirect('/index.html'););
 
 /* App Configuration */
 // GET all profiles rows as Profile objects
@@ -78,11 +79,11 @@ app.get('/strangers', (req, res) => {
   });
 });
 
-// GET image form 'faces' folder
+// GET image form 'profiles' folder
 // Request parameters: name of the image file
 app.get('/faces/:filename', (req, res) => {
   if(!req.params.filename) res.status(400).end();
-  res.sendFile(`${__dirname}/faces/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+  res.sendFile(`${__dirname}/faces/profiles/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
 });
 
 // GET image form 'strangers' folder
@@ -115,12 +116,12 @@ app.post('/statistics', [], (req, res) => {
 
 // POST upload a new image in 'faces' folder
 // Request body: image file to upload and name given to it
-app.post('/faces', [], (req, res) => {
+app.post('/faces/profiles', [], (req, res) => {
   if(!req.files || Object.keys(req.files).length === 0) res.status(400).end();
   if(!req.body.name) res.status(400).end();
   const image = req.files.avatar;
   const name = `${req.body.name}.${image.name.split('.')[image.name.split('.').length-1]}`;
-  image.mv(`${__dirname}/faces/${name}`, (error) => {
+  image.mv(`${__dirname}/faces/profiles/${name}`, (error) => {
     if(error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
       res.end(JSON.stringify({ status: 'error', message: error }));
@@ -131,25 +132,40 @@ app.post('/faces', [], (req, res) => {
   });
 });
 
-// POST upload a new image in 'strangers' folder
-// Request body: image url to upload, width and height of the screenshot and the name given to it
+// POST upload a screenshot in 'faces' folder
+// Request body: base64 image to save
 app.post('/screenshot', [], (req, res) => {
-  if(!req.body.imageBase64 || !req.body.width || !req.body.height || !req.body.name) res.status(400).end();
-  const canvas = createCanvas(parseInt(req.body.width), parseInt(req.body.height));
-  const context = canvas.getContext('2d');
-  loadImage(req.body.imageBase64).then(image => {
-    context.drawImage(image, 0, 0);
-    const buffer = canvas.toBuffer('image/png');
-    fs.writeFileSync(`${__dirname}/faces/strangers/${req.body.name}`, buffer);
-  });
+  if(!req.body.imageBase64) res.status(400).end();
+  dao.generateId(8)
+    .then( (newId) => {
+        loadImage(req.body.imageBase64)
+          .then(image => {
+            const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
+            canvas.getContext('2d').drawImage(image, 0, 0);
+            const buffer = canvas.toBuffer('image/png');
+            fs.writeFileSync(`${__dirname}/faces/${newId}.png`, buffer);
+            return image;})
+          .then(image => {
+            const results = await facerecognition.identify(image);
+            results.forEach(result => {
+              if(result.name == 'unknown'){}
+              else {}
+            });
+          });
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ status: 'success', newId: newId}));
+    })
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// POST move an image from 'strangers' folder to the 'faces' one
-// Request body: file name of the image and name given to the copy
-app.post('/faces/strangers', [], (req, res) => {
-  if(!req.body.filename || !req.body.name) res.status(400).end();
-  const oldPath = `${__dirname}/faces/strangers/${req.body.filename}`;
-  const newPath = `${__dirname}/faces/${req.body.name}.${req.body.filename.split('.')[req.body.filename.split('.').length-1]}`;
+// POST move an image from a folder (faces by default) to another one
+// Request params: the folder in which the image is
+// Request body: the file name of the image (old id) and the destination folder
+app.post('/faces/:folder', [], (req, res) => {
+  if(!req.body.filename || !req.body.folder) res.status(400).end();
+  const fromFolder = (req.params.folder)? req.params.folder + '/': '/';
+  const oldPath = `${__dirname}/faces/${fromFolder}${req.body.filename}`;
+  const newPath = `${__dirname}/faces/${req.body.folder}/${req.body.filename}`;
   fs.readFile(oldPath, (err, data) => {
       if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
       fs.writeFile(newPath, data, (err) => {
@@ -233,17 +249,6 @@ app.delete(`/faces/:filename`, (req, res) => {
   });
 });
 
-// DELETE delete an image in 'strangers' folder
-// Request parameters: image name
-// Request body: boolean to say if is a stranger or not
-app.delete(`/strangers/:filename`, (req, res) => {
-  if(!req.params.filename) res.status(400).end();
-  fs.unlink(`${__dirname}/faces/strangers/${req.params.filename}`, (err) => {
-    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
-    res.status(200).end();
-  });
-});
-
 // DELETE delete a profile
 // Request parameters: profile ID
 app.delete(`/profiles/:profileId`, (req, res) => {
@@ -263,4 +268,8 @@ app.delete(`/statistics/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-app.listen(port, () => {console.log(`Listening to requests on http://localhost:${port}`);});
+app.listen(port, () => {
+  console.log(`Loading models from ${process.env.MODELS_URL}`);
+  facerecognition.loadModels(process.env.MODELS_URL);
+  console.log(`Listening to requests on http://localhost:${port}`);
+});

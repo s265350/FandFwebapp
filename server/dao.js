@@ -127,16 +127,28 @@ exports.getProfileStatisticsById = function(profileId) {
 
 /* POST */
 
+exports.generateId = function(length) {
+    // id must be a unique string of at least 6 random characters/numbers
+    if (length < 6) length = 6;
+    let strangers;
+    let profiles = this.getProfilesId();
+    const response = await fetch(`/strangers`);
+    if (response.ok) strangers = await response.json(); else throw `ERROR fetching /strangers`;
+    let id;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    while (!id || id == '' || profiles.includes(id) || strangers.includes(id)){
+        id = '';
+        for (let i = 0; i < length; i++) id += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return id;
+}
+
 // upload a new profile row
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
         // id must be a unique string of 6 random characters/numbers
-        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        do{
-            profile.profileId = '';
-            for (let i = 0; i < 6; i++) profile.profileId += charset.charAt(Math.floor(Math.random() * charset.length));
-        } while(this.getProfileById(profile.profileId) === null);
+        profile.profileId = await this.generateId(6);
         // save
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
             if (err) reject(err);

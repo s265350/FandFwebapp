@@ -77,13 +77,13 @@ async function getStrangers(){
 
 // get profile image or stranger image
 async function getImage(filename, stranger) {
-    let path = "";
-    if(stranger) path = "/strangers";
-    const response = await fetch(`/faces${path}/${filename}`);
+    let path = "faces";
+    path += (stranger)? "strangers" : "profiles";
+    const response = await fetch(`/${path}/${filename}`);
     if(response.ok){
         return response.url;
     } else
-        throw `ERROR fetching /faces${path}/${filename}`;
+        throw `ERROR fetching /${path}/${filename}`;
 }
 
 /* POST */
@@ -124,13 +124,13 @@ async function newProfileStatistics(profileStatistics) {
     });
 }
 
-// upload an image in "faces" or "strangers" folder
+// upload an image in "profiles" or "strangers" folder
 async function uploadImage(file, name, stranger){
     const formData = new FormData();
     formData.append('name', name);
     formData.append('avatar', file);
     let path = "faces";
-    if(stranger) path = "strangers";
+    path += (stranger)? "strangers" : "profiles";
     return new Promise( (resolve, reject) => {
         fetch(`/${path}`, {method: 'POST', body: formData})
         .then( (response) => {
@@ -144,36 +144,16 @@ async function uploadImage(file, name, stranger){
     });
 }
 
-// upload an image in "strangers" folder
-async function uploadScreenshot(imageBase64, width, height, name){
+// upload an image in "faces" folder
+async function uploadScreenshot(imageBase64, width, height){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
     formData.append("width", width);
     formData.append("height", height);
-    formData.append("name", name);
     return new Promise( (resolve, reject) => {
         fetch(`/screenshot`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
-            else {
-                response.json()
-                    .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
-            }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
-    });
-}
-
-// move an image from "strangers" folder to "faces" one
-async function saveStrangerImage(filename, name){
-    return new Promise( (resolve, reject) => {
-        fetch(`/faces/strangers`, {
-            method: 'POST',
-            headers:{'Content-Type': 'application/json',},
-            body: JSON.stringify({"filename": filename, "name": name}),
-        })
-        .then( (response) => {
-            if(response.ok) resolve(null);
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
@@ -263,10 +243,10 @@ async function updateProfileStatistics(profileStatistics) {
 
 /* DELETE */
 
-// delete an image in "faces" or "strangers" folder
+// delete an image in "profiles" or "strangers" folder
 async function deleteImage(filename, stranger){
     let path = 'faces';
-    if(stranger) path = 'strangers';
+    filename += (stranger)? 'strangers/' : 'profiles/';
     return new Promise( (resolve, reject) => {
         fetch(`/${path}/${filename}`, {
             method: 'DELETE',
@@ -325,8 +305,7 @@ export {
     newProfile, 
     newProfileStatistics, 
     uploadImage, 
-    uploadScreenshot, 
-    saveStrangerImage, 
+    uploadScreenshot,  
     sendEmailNotification, 
     sendSmsNotification, 
     updateProfile, 
