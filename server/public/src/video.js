@@ -63,17 +63,17 @@ document.getElementById('video').addEventListener('play', async () => {
         //console.log(`detected ${detections.length} faces`);
         //canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
-        const results = resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor));
-        results.forEach(async (result, i) => {
+        if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) return;
+        resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor)).forEach(async (result, i) => {
             let name = result.toString().split(' ')[0];
             if (name == 'unknown') {
-                const resultsStranger = resizedDetections.map(d => faceMatcherStrangers.findBestMatch(d.descriptor));
-                resultsStranger.forEach((resultS, j) => {
-                    if (resultS.toString().split(' ')[0] == 'unknown') {
-                        const { x, y, width, height } = resizedDetections[j].detection.box;
-                        takeScreenshot(x-width, y-height, width*4, height*4)
-                    }
-                });
+                const { x, y, width, height } = resizedDetections[i].detection.box;
+                if (!faceMatcherStrangers || faceMatcherStrangers.length <= 0){
+                    takeScreenshot(x-width, y-height, width*4, height*4);
+                } else {
+                    const resultsStranger = resizedDetections.map(d => faceMatcherStrangers.findBestMatch(d.descriptor));
+                    resultsStranger.forEach((resultS, j) => {if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot(x-width, y-height, width*4, height*4);}});
+                }
             } else {
                 let stats;
                 statistics.forEach(s => {if(s.profileId == name){s.faces++;stats = s;}});
