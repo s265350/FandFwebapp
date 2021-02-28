@@ -46,7 +46,7 @@ function getStream(){
             .catch((error) => {console.error('Video stream error: ', error)});
 }
 
-//individua volto e mostra i Landmarks, se lo porto in getStream riquadri multipli!!
+//individua volto e mostra i Landmarks
 document.getElementById('video').addEventListener('play', async () => {
     const canvas = faceapi.createCanvasFromMedia(document.getElementById('video'));
     document.body.append(canvas);
@@ -62,8 +62,13 @@ document.getElementById('video').addEventListener('play', async () => {
         results.forEach(async (result, i) => { //disegno riquadro e nome attorno al volto
             new faceapi.draw.DrawBox(resizedDetections[i].detection.box, { label: result.toString().split(' ')[0] }).draw(canvas);
             if (result.toString().split(' ')[0] == 'unknown') {
-                const resultsStranger = resizedDetections.map(e => faceMatcherStrangers.findBestMatch(e.descriptor));
-                resultsStranger.forEach((resultS, j) => {if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot()}});
+                const resultsStranger = resizedDetections.map(d => faceMatcherStrangers.findBestMatch(d.descriptor));
+                resultsStranger.forEach((resultS, j) => {
+                    if (resultS.toString().split(' ')[0] == 'unknown') {
+                        const { x, y, width, height } = resizedDetections[j].detection.box;
+                        takeScreenshot(x-width/2, y-height/2, width*2, height*2)
+                    }
+                });
             }
         })
     }, 100)
@@ -107,18 +112,19 @@ async function getStrangersFaceMatcher() { //etichetto foto stranieri
     return new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
 }
 
-async function takeScreenshot(){
+async function takeScreenshot(startx, starty, width, height){
     const canvas = document.createElement('canvas');
-    canvas.width = document.getElementById('video').videoWidth;
-    canvas.height = document.getElementById('video').videoHeight;
-    canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(document.getElementById('video'), startx, starty, width, height, 0, 0, width, height);
     const imageBase64 = canvas.toDataURL('image/png');
+    console.log("notification");
     Main.strangerNotification(imageBase64);
     let strangers = await Api.getStrangers();
     let name = '';
     do{name = generateName();} while (strangers.includes(name));
     await Api.uploadScreenshot(imageBase64, canvas.width, canvas.height, name);
-    faceMatcherStrangers = await getStrangersFaceMatcher();
+    faceMatcherStrangers = await getStrangersFaceMatcher(); 
 }
 
 function generateName() {
