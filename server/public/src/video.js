@@ -60,12 +60,13 @@ document.getElementById('video').addEventListener('play', async () => {
     console.log(`faces detection started`);
     detectionInterval = setInterval(async () => { //individuo volto e faccio matching
         const detections = await faceapi.detectAllFaces(document.getElementById('video')).withFaceLandmarks().withFaceDescriptors();
-        //console.log(`detected ${detections.length} faces`);
+        console.log(`detected ${detections.length} faces`);
         //canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
         if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) return;
         resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor)).forEach(async (result, i) => {
             let name = result.toString().split(' ')[0];
+            
             if (name == 'unknown') {
                 const { x, y, width, height } = resizedDetections[i].detection.box;
                 if (!faceMatcherStrangers || faceMatcherStrangers.length <= 0){
