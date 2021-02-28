@@ -71,8 +71,7 @@ document.getElementById('video').addEventListener('play', async () => {
                 if (!faceMatcherStrangers || faceMatcherStrangers.length <= 0){
                     takeScreenshot(x-width, y-height, width*4, height*4);
                 } else {
-                    const resultsStranger = resizedDetections.map(d => faceMatcherStrangers.findBestMatch(d.descriptor));
-                    resultsStranger.forEach((resultS, j) => {if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot(x-width, y-height, width*4, height*4);}});
+                    resizedDetections.map(d => faceMatcherStrangers.findBestMatch(d.descriptor)).forEach((resultS, j) => {if (resultS.toString().split(' ')[0] == 'unknown') {takeScreenshot(x-width, y-height, width*4, height*4);}});
                 }
             } else {
                 let stats;
