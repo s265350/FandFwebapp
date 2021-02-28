@@ -166,13 +166,12 @@ async function createStranger(stranger) {
 }
 
 // upload an image in "profiles" or "strangers" folder
-async function changeProfileImage(file, profileId){
+async function changeProfileImage(profileId, src){
     const formData = new FormData();
     formData.append('profileId', profileId);
-    formData.append('avatar', file);
-    const path = (stranger)? "strangers" : "profiles";
+    formData.append('src', src);
     return new Promise( (resolve, reject) => {
-        fetch(`/faces/${path}`, {method: 'POST', body: formData})
+        fetch(`/faces/profiles`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {

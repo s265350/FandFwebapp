@@ -6,12 +6,13 @@
 const express = require('express');
 const fileupload = require('express-fileupload');
 const fs = require('fs');
-const dao = require('./dao.js');
-require('dotenv').config()
-const facerecognition = require('./face-recognition.js');
+require('dotenv').config();
 const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const { createCanvas, loadImage } = require('canvas')
+
+const dao = require('./dao.js');
+const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
 const app = express();
@@ -22,7 +23,7 @@ app.use(express.json(),fileupload());
 
 /* Routes Definitions */
 app.use(express.static('public'));
-app.get('/', (req, res) => res.redirect('/index.html'););
+app.get('/', (req, res) => res.redirect('/index.html'));
 
 /* App Configuration */
 // GET all profiles rows as Profile objects
@@ -135,9 +136,9 @@ app.post('/strangers', [], (req, res) => {
 // POST upload a new image in 'faces' folder
 // Request body: image FILE to upload and the profileId
 app.post('/faces/profiles', [], (req, res) => {
-  if(!req.files || Object.keys(req.files).length === 0 || !req.body.profileId) res.status(400).end();
-  const image = req.files.avatar;
-  const name = `${req.body.profileId}.${image.name.split('.')[image.name.split('.').length-1]}`;
+  if(!req.body.profileId || !req.body.src) res.status(400).end();
+  const image = req.body.src;
+  const name = `${req.body.profileId}.png`;
   image.mv(`${__dirname}/faces/profiles/${name}`, (error) => {
     if(error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
@@ -164,7 +165,7 @@ app.post('/faces', [], (req, res) => {
               canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
               const buffer = canvas.toBuffer('image/png');
               fs.writeFileSync(`${__dirname}/faces/strangers/${id}.png`, buffer);
-              res.status(200).end();
+              //update facematcherstrangers
             })
             .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
         } else {
@@ -178,24 +179,25 @@ app.post('/faces', [], (req, res) => {
           } else {
             dao.getProfileStatisticsById(result.name)
               .then( (profileStatistics) => {
-                profileStatistics.detections++;
-                dao.updateStranger(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+                profileStatistics.faces++;
+                dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
               })
               .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
           }
         }
       });
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// POST move an image from a folder (faces by default) to another one
+// POST move an image from a folder to another one
 // Request params: the folder in which the image is
 // Request body: the file name of the image (old id) and the destination folder
 app.post('/faces/:folder', [], (req, res) => {
-  if(!req.body.filename || !req.body.folder) res.status(400).end();
-  const fromFolder = (req.params.folder)? req.params.folder + '/': '/';
-  const oldPath = `${__dirname}/faces/${fromFolder}${req.body.filename}`;
+  if(!req.params.folder || !req.body.filename || !req.body.folder) res.status(400).end();
+  const oldPath = `${__dirname}/faces/${req.params.folder}/${req.body.filename}`;
   const newPath = `${__dirname}/faces/${req.body.folder}/${req.body.filename}`;
   fs.readFile(oldPath, (err, data) => {
       if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});

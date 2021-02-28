@@ -40,7 +40,7 @@ exports.getProfileFaceMatcher = function() {
 
 exports.getStrangersFaceMatcher = function() {
     // label stranger images
-    const strangers = ;
+    const strangers = await dao.getAllStrangersId();
     return new Promise.all(
         strangers.map(async stranger => {
             const descriptions = []

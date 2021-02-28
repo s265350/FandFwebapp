@@ -227,8 +227,8 @@ async function submitEditModal(profile, save){
             await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
         }
         // avatar
-        if(document.getElementById('edit_upload').files[0]){
-            newProfile.avatar = await Api.changeProfileImage(document.getElementById('edit_upload').files[0], newProfile.profileId);
+        if(document.getElementById("edit_avatar").getAttribute("src") != "svg/avatar.svg"){
+            newProfile.avatar = await Api.changeProfileImage(newProfile.profileId, document.getElementById("edit_avatar").getAttribute("src"));
             newProfile.avatar = newProfile.avatar.directory;
             if(update) await Api.deleteImage(profile.avatar, false);
             else await Api.deleteImage(profile, true);
