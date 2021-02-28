@@ -9,4 +9,4 @@ Il nostro obiettivo è quello di raggiungere almeno il 50% di riuscita, anche se
 To start the server open terminal and in server folder run: npm run dev
 
 TODO:
-- library integration
+- from client to server library migration (because of very low performances)
