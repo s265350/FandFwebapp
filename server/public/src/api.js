@@ -145,9 +145,9 @@ async function uploadImage(file, name, stranger){
 }
 
 // upload an image in "strangers" folder
-async function uploadScreenshot(url, width, height, name){
+async function uploadScreenshot(imageBase64, width, height, name){
     const formData = new FormData();
-    formData.append("url", url);
+    formData.append("imageBase64", imageBase64);
     formData.append("width", width);
     formData.append("height", height);
     formData.append("name", name);
@@ -174,6 +174,46 @@ async function saveStrangerImage(filename, name){
         })
         .then( (response) => {
             if(response.ok) resolve(null);
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+// send an email notification
+async function sendEmailNotification(email, name, subject, message, imageBase64){
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("name", name);
+    formData.append("subject", subject);
+    formData.append("message", message);
+    formData.append("imageBase64", imageBase64);
+    return new Promise( (resolve, reject) => {
+        fetch(`/sendemail`, {method: 'POST', body: formData})
+        .then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+// send an SMS notification
+async function sendSmsNotification(number, message, imageBase64){
+    const formData = new FormData();
+    formData.append("number", number);
+    formData.append("message", message);
+    if(imageBase64)formData.append("imageBase64", imageBase64);
+    return new Promise( (resolve, reject) => {
+        fetch(`/sendemail`, {method: 'POST', body: formData})
+        .then( (response) => {
+            if(response.ok) resolve(response.json());
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
@@ -287,6 +327,8 @@ export {
     uploadImage, 
     uploadScreenshot, 
     saveStrangerImage, 
+    sendEmailNotification, 
+    sendSmsNotification, 
     updateProfile, 
     updateProfileStatistics, 
     deleteImage, 

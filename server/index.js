@@ -7,11 +7,14 @@ const express = require('express');
 const fileupload = require('express-fileupload');
 const fs = require('fs');
 const dao = require('./dao.js');
+require('dotenv').config()
+const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
+const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const { createCanvas, loadImage } = require('canvas')
 
 /* App Variables */
 const app = express();
-const port = process.env.PORT || '8000';
+const port = process.env.PORT || '4000';
 
 /* Process body content */
 app.use(express.json(),fileupload());
@@ -71,7 +74,7 @@ app.get('/statistics/:profileId', (req, res) => {
 app.get('/strangers', (req, res) => {
   fs.readdir(`${__dirname}/faces/strangers`, (err, names) => {
     if(err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
-    res.json(names.filter(function(name){return !name.includes('DS_Store');}));
+    res.json(names?.filter(function(name){return !name.includes('DS_Store');}));
   });
 });
 
@@ -131,10 +134,10 @@ app.post('/faces', [], (req, res) => {
 // POST upload a new image in 'strangers' folder
 // Request body: image url to upload, width and height of the screenshot and the name given to it
 app.post('/screenshot', [], (req, res) => {
-  if(!req.body.url || !req.body.width || !req.body.height || !req.body.name) res.status(400).end();
+  if(!req.body.imageBase64 || !req.body.width || !req.body.height || !req.body.name) res.status(400).end();
   const canvas = createCanvas(parseInt(req.body.width), parseInt(req.body.height));
   const context = canvas.getContext('2d');
-  loadImage(req.body.url).then(image => {
+  loadImage(req.body.imageBase64).then(image => {
     context.drawImage(image, 0, 0);
     const buffer = canvas.toBuffer('image/png');
     fs.writeFileSync(`${__dirname}/faces/strangers/${req.body.name}`, buffer);
@@ -157,6 +160,46 @@ app.post('/faces/strangers', [], (req, res) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
   });
+});
+
+// POST email
+// Request parameters: 
+// Request body: email address, name, subject, message
+app.post( '/sendemail', function(req, res){
+  if(!req.body.email || !req.body.name || !req.body.subject || !req.body.message || !req.body.imageBase64) res.status(400).end();
+  // eventual spam protection or checks.
+  mandrill('/messages/send', {
+    message: {
+        to: [{email: req.body.email , name: req.body.name}],
+        from_email: process.env.MANDRILL_EMAIL,
+        from_name: process.env.COMPANY_NAME,
+        subject: req.body.subject,
+        text: req.body.message,
+        important: true,
+        images: [{type: 'image/png' , name: 'unknown', content: req.body.imageBase64}]
+    }
+  }, function(error){if (error) console.log( JSON.stringify(error) );});
+});
+
+// POST sms
+// Request parameters: 
+// Request body: phone number, message, (optional) image
+app.post( '/sendsms', function(req, res){
+  if(!req.body.phone || !req.body.message) res.status(400).end();
+  // if an image is passed send MMS else send SMS
+  if(req.body.imageBase64)
+    twilio.messages.create({
+      body: req.body.message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      mediaUrl: req.body.imageBase64,
+      to: req.body.phone
+    });
+  else
+    twilio.messages.create({
+      body: req.body.message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: req.body.phone
+    });
 });
 
 // PUT update a profile row

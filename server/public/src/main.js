@@ -3,6 +3,8 @@ import * as Video from './video.js';
 import * as Recognize from './page_recognize.js';
 import * as Profile from './page_profile.js';
 
+let loggedProfile;
+
 window.addEventListener('load', () => {
     // sidebar listeners
     document.getElementById('sideHome').addEventListener('click', () => {loadHome();});
@@ -13,7 +15,38 @@ window.addEventListener('load', () => {
     // init page
     Video.setup();
     loadHome();
+    // Check if the browser supports notifications and ask the user for permission
+    if (!("Notification" in window)) alert("This browser does not support desktop notification");
+    else if (Notification.permission !== "denied") Notification.requestPermission();
 });
+
+function pushNotification(imageBase64){
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    if (Notification.permission === 'granted'){
+        const notification = new Notification(subject, {
+            body: "Don't worry! An image of his face was saved",
+            icon: "../svg/logo.png",
+            badge: "../svg/logo.png",
+            image: imageBase64
+        });
+        notification.onclick = function() {loadRecognize();};
+    }
+}
+
+async function emailNotification(imageBase64){
+    // for this is necessary to create an .env file and insert the credentials for Mandrill
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    await Api.sendEmailNotification(loggedProfile.email, loggedProfile.firstName, subject, message, imageBase64);
+}
+
+async function smsNotification(imageBase64){
+    // for this is necessary to create an .env file and insert the credentials for Mandrill
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    await Api.sendSmsNotification(loggedProfile.phone, loggedProfile.firstName, subject, message, imageBase64);
+}
 
 function loadHome(){
     // sidemenu update
@@ -117,4 +150,4 @@ async function loadAboutUs(){
     div.appendChild(element);
 }
 
-export {loadRecognize, loadProfile};
+export {loadRecognize, loadProfile, pushNotification, emailNotification, smsNotification};
