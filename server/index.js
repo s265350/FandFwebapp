@@ -34,7 +34,7 @@ app.get('/profiles', (req, res) => {
 
 // GET all profiles ID
 app.get('/profilesid', (req, res) => {
-  dao.getProfilesId()
+  dao.getAllProfilesId()
     .then( (profiles) => res.json(profiles) )
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -57,7 +57,7 @@ app.get('/admin', (req, res) => {
 
 // GET all statistics as ProfileStatistics objects
 app.get('/statistics', (req, res) => {
-  dao.getStatistics()
+  dao.getProfilesStatistics()
     .then( (statistics) => res.json(statistics) )
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -73,24 +73,33 @@ app.get('/statistics/:profileId', (req, res) => {
 
 // GET path list for all images in 'strangers' folder
 app.get('/strangers', (req, res) => {
-  fs.readdir(`${__dirname}/faces/strangers`, (err, names) => {
-    if(err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
-    res.json(names?.filter(function(name){return !name.includes('DS_Store');}));
-  });
+  dao.getStrangers()
+    .then( (strangers) => res.json(strangers) )
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// GET image form 'profiles' folder
+// GET all strangers ID
+app.get('/strangersid', (req, res) => {
+  dao.getAllStrangersId()
+    .then( (profiles) => res.json(profiles) )
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// GET the stranger with corresponding profile ID
+// Request parameters: profile ID
+app.get('/strangers/:profileId', (req, res) => {
+  if(!req.params.profileId) res.status(400).end();
+  dao.getStrangerById(req.params.profileId)
+    .then( (stranger) => res.json(stranger) )
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// GET image form 'profiles' or 'strangers' folder
 // Request parameters: name of the image file
 app.get('/faces/:filename', (req, res) => {
   if(!req.params.filename) res.status(400).end();
-  res.sendFile(`${__dirname}/faces/profiles/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
-});
-
-// GET image form 'strangers' folder
-// Request parameters: name of the image file
-app.get('/faces/strangers/:filename', (req, res) => {
-  if(!req.params.filename) res.status(400).end();
-  res.sendFile(`${__dirname}/faces/strangers/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+  const path = (req.body.stranger)? "strangers" : "profiles";
+  res.sendFile(`${__dirname}/faces/${path}/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
 });
 
 // POST upload a new profile row
@@ -114,13 +123,21 @@ app.post('/statistics', [], (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
+// POST upload a new stranger row
+// Request body: object describing a stranger { profileId*, detections }
+app.post('/strangers', [], (req, res) => {
+  if(!req.body.profileId || !req.body.detections) res.status(400).end();
+  dao.createStranger({profileId: req.body.profileId, detections: req.body.detections})
+    .then( () => res.status(200).end() )
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
 // POST upload a new image in 'faces' folder
-// Request body: image file to upload and name given to it
+// Request body: image FILE to upload and the profileId
 app.post('/faces/profiles', [], (req, res) => {
-  if(!req.files || Object.keys(req.files).length === 0) res.status(400).end();
-  if(!req.body.name) res.status(400).end();
+  if(!req.files || Object.keys(req.files).length === 0 || !req.body.profileId) res.status(400).end();
   const image = req.files.avatar;
-  const name = `${req.body.name}.${image.name.split('.')[image.name.split('.').length-1]}`;
+  const name = `${req.body.profileId}.${image.name.split('.')[image.name.split('.').length-1]}`;
   image.mv(`${__dirname}/faces/profiles/${name}`, (error) => {
     if(error) {
       res.writeHead(500, {'Content-Type': 'application/json'})
@@ -133,8 +150,8 @@ app.post('/faces/profiles', [], (req, res) => {
 });
 
 // POST upload a screenshot in 'faces' folder
-// Request body: base64 image to save
-app.post('/screenshot', [], (req, res) => {
+// Request body: BASE64 image to save
+app.post('/faces', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
   dao.generateId(8)
     .then( (newId) => {
@@ -142,12 +159,17 @@ app.post('/screenshot', [], (req, res) => {
           .then(image => {
             const results = await facerecognition.identify(image);
             results.forEach(result => {
-              const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
-              canvas.getContext('2d').drawImage(image, 0, 0);
-              const buffer = canvas.toBuffer('image/png');
-              fs.writeFileSync(`${__dirname}/faces/${newId}.png`, buffer);
-              if(result.name == 'unknown'){}
-              else {}
+              if(result.name == 'unknown'){
+                const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+                canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
+                const buffer = canvas.toBuffer('image/png');
+                fs.writeFileSync(`${__dirname}/faces/strangers/${newId}.png`, buffer);
+                dao.createStranger({profileId: newId, detections: 1})
+                  .then( () => res.status(200).end() )
+                  .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+              } else {
+
+              }
             });
           });
         res.writeHead(200, {'Content-Type': 'application/json'});
@@ -236,18 +258,29 @@ app.put('/statistics/:profileId', (req, res) => {
       .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// DELETE delete an image in 'faces' folder
+// PUT update a stranger row
+// Request parameters: profile ID
+// Request body: object describing a stranger { profileId*, detections }
+app.put('/statistics/:profileId', (req, res) => {
+  if(!req.params.profileId || !req.body) res.status(400).end();
+  dao.updateStranger(req.body)
+      .then( () => res.status(200).end() )
+      .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// DELETE delete an image in a folder
 // Request parameters: image name
-// Request body: boolean to say if is a stranger or not
+// Request body: boolean specifing if is a stranger or not
 app.delete(`/faces/:filename`, (req, res) => {
   if(!req.params.filename) res.status(400).end();
-  fs.unlink(`${__dirname}/faces/${req.params.filename}`, (err) => {
+  const path = (req.body.stranger)? "strangers" : "profiles";
+  fs.unlink(`${__dirname}/faces/${path}/${req.params.filename}`, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.status(200).end();
   });
 });
 
-// DELETE delete a profile
+// DELETE delete a profile row
 // Request parameters: profile ID
 app.delete(`/profiles/:profileId`, (req, res) => {
   if(!req.params.profileId) res.status(400).end();
@@ -256,11 +289,20 @@ app.delete(`/profiles/:profileId`, (req, res) => {
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// DELETE delete statistics for a profile
+// DELETE delete a statistics row
 // Request parameters: profile ID
 app.delete(`/statistics/:profileId`, (req, res) => {
   if(!req.params.profileId) res.status(400).end();
   dao.deleteProfileStatistics(req.params.profileId)
+    .then( () => res.status(200).end() )
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+});
+
+// DELETE delete stranger row
+// Request parameters: profile ID
+app.delete(`/strangers/:profileId`, (req, res) => {
+  if(!req.params.profileId) res.status(400).end();
+  dao.deleteStranger(req.params.profileId)
     .then( () => res.status(200).end() )
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });

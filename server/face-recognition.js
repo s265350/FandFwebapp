@@ -62,8 +62,14 @@ exports.identify = function(image) {
     resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor)).forEach((resultP, i) => {
         let { x, y, width, height } = resizedDetections[i].detection.box;
         let name = resultP.toString().split(' ')[0];
-        if (name == 'unknown' && faceMatcherStrangers && faceMatcherStrangers.length > 0) {name = faceMatcherStrangers.findBestMatch(resizedDetections[i].descriptor).toString().split(' ')[0];}
-        results.push({ name: name, x: x - width, y: y - height, width: width * 4, height: height * 4 });
+        let newStranger = false;
+        if (name == 'unknown' && faceMatcherStrangers && faceMatcherStrangers.length > 0) {
+            name = faceMatcherStrangers.findBestMatch(resizedDetections[i].descriptor).toString().split(' ')[0];
+            if(name != 'unknown'){
+                newStranger = true;
+            }
+        }
+        results.push({ name: name, newStranger: newStranger, x: x - width, y: y - height, width: width * 4, height: height * 4 });
     });
     return results;
 }

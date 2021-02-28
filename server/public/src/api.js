@@ -2,6 +2,7 @@
 
 import Profile from "./profile.js";
 import ProfileStatistics from "./profilestatistics.js";
+import Stranger from "./stranger.js";
 
 /* GET */
 
@@ -22,7 +23,7 @@ async function getAllProfilesId() {
         const ids = await response.json();
         return ids.map( (p) => JSON.parse(p) );
     } else
-        throw `/statistics`;
+        throw `/profilesid`;
 }
 
 // get profile with corresponding profile ID
@@ -46,7 +47,7 @@ async function getAdminProfile() {
 }
 
 // get all statistics as ProfileStatistics objects
-async function getAllStatistics() {
+async function getProfilesStatistics() {
     const response = await fetch(`/statistics`);
     if(response.ok){
         const statistics = await response.json();
@@ -69,27 +70,49 @@ async function getProfileStatisticsById(profileId) {
 async function getStrangers(){
     const response = await fetch(`/strangers`);
     if(response.ok){
-        const res = await response.json();
-        return res;
+        const strangers = await response.json();
+        return strangers.map( (p) => Stranger.from(p) );
     } else
         throw `ERROR fetching /strangers`;
 }
 
+// get all strangers ID
+async function getAllStrangersId() {
+    const response = await fetch(`/strangersid`);
+    if(response.ok){
+        const ids = await response.json();
+        return ids.map( (p) => JSON.parse(p) );
+    } else
+        throw `/strangersid`;
+}
+
+// get stranger object with corresponding profile ID
+async function getStrangerById(profileId) {
+    const response = await fetch(`/strangers/${profileId}`);
+    if(response.ok){
+        const stranger = await response.json();
+        return Stranger.from(stranger);
+    } else
+        throw `ERROR fetching /statistics/${profileId}`;
+}
+
 // get profile image or stranger image
 async function getImage(filename, stranger) {
-    let path = "faces";
-    path += (stranger)? "strangers" : "profiles";
-    const response = await fetch(`/${path}/${filename}`);
+    const path = (stranger)? "strangers" : "profiles";
+    const response = await fetch(`/faces/${path}/${filename}`, {
+        method: 'GET',
+        body: JSON.stringify(stranger),
+    });
     if(response.ok){
         return response.url;
     } else
-        throw `ERROR fetching /${path}/${filename}`;
+        throw `ERROR fetching /faces/${path}/${filename}`;
 }
 
 /* POST */
 
 // upload a new profile row
-async function newProfile(profile) {
+async function createProfile(profile) {
     return new Promise( (resolve, reject) => {
         fetch(`/profiles`, {
             method: 'POST',
@@ -107,7 +130,7 @@ async function newProfile(profile) {
 }
 
 // upload a new statistics row
-async function newProfileStatistics(profileStatistics) {
+async function createProfileStatistics(profileStatistics) {
     return new Promise( (resolve, reject) => {
         fetch(`/statistics`, {
             method: 'POST',
@@ -124,15 +147,32 @@ async function newProfileStatistics(profileStatistics) {
     });
 }
 
-// upload an image in "profiles" or "strangers" folder
-async function uploadImage(file, name, stranger){
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('avatar', file);
-    let path = "faces";
-    path += (stranger)? "strangers" : "profiles";
+// upload a new stranger row
+async function createStranger(stranger) {
     return new Promise( (resolve, reject) => {
-        fetch(`/${path}`, {method: 'POST', body: formData})
+        fetch(`/strangers`, {
+            method: 'POST',
+            headers:{'Content-Type': 'application/json',},
+            body: JSON.stringify(stranger),
+        }).then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
+// upload an image in "profiles" or "strangers" folder
+async function changeProfileImage(file, profileId){
+    const formData = new FormData();
+    formData.append('profileId', profileId);
+    formData.append('avatar', file);
+    const path = (stranger)? "strangers" : "profiles";
+    return new Promise( (resolve, reject) => {
+        fetch(`/faces/${path}`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {
@@ -144,12 +184,12 @@ async function uploadImage(file, name, stranger){
     });
 }
 
-// upload an image in "faces" folder
-async function uploadScreenshot(imageBase64){
+// upload an image
+async function uploadImage(imageBase64){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
     return new Promise( (resolve, reject) => {
-        fetch(`/screenshot`, {method: 'POST', body: formData})
+        fetch(`/faces`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {
@@ -243,10 +283,9 @@ async function updateProfileStatistics(profileStatistics) {
 
 // delete an image in "profiles" or "strangers" folder
 async function deleteImage(filename, stranger){
-    let path = 'faces';
-    filename += (stranger)? 'strangers/' : 'profiles/';
+    const path = (stranger)? 'strangers/' : 'profiles/';
     return new Promise( (resolve, reject) => {
-        fetch(`/${path}/${filename}`, {
+        fetch(`/faces/${path}/${filename}`, {
             method: 'DELETE',
             headers:{'Content-Type': 'application/json',},
             body: JSON.stringify({"stranger": stranger}),
@@ -296,14 +335,17 @@ export {
     getAllProfilesId, 
     getProfileById, 
     getAdminProfile, 
-    getAllStatistics, 
+    getProfilesStatistics, 
     getProfileStatisticsById, 
     getStrangers, 
+    getAllStrangersId, 
+    getStrangerById, 
     getImage, 
-    newProfile, 
-    newProfileStatistics, 
-    uploadImage, 
-    uploadScreenshot,  
+    createProfile, 
+    createProfileStatistics, 
+    createStranger, 
+    changeProfileImage, 
+    uploadImage,  
     sendEmailNotification, 
     sendSmsNotification, 
     updateProfile, 

@@ -6,26 +6,26 @@
 const sqlite = require('sqlite3');
 const db = new sqlite.Database('database.db', (err) => {if(err) throw err;});
 
-/* GET */
+/* GETS */
 
 // get all profiles rows as Profile objects
 exports.getProfiles = function() {
     return new Promise( (resolve, reject) => {
-    const sql = 'SELECT * FROM profiles';
+        const sql = 'SELECT * FROM profiles';
         db.all(sql, [], (err, rows) => {
             if (err) {reject(err);return;}
             const profiles = rows.map( (row) => ({
                 profileId: row.profileId,
                 firstName: row.firstName,
-                lastName : row.lastName,
-                phone : row.phone,
-                email : row.email,
-                system : row.system,
-                family : row.family,
-                notifications : !!row.notifications,
-                notificationsPhone : !!row.notificationsPhone,
-                notificationsEmail : !!row.notificationsEmail,
-                avatar : row.avatar
+                lastName: row.lastName,
+                phone: row.phone,
+                email: row.email,
+                system: row.system,
+                family: row.family,
+                notifications: !!row.notifications,
+                notificationsPhone: !!row.notificationsPhone,
+                notificationsEmail: !!row.notificationsEmail,
+                avatar: row.avatar
             }));
             resolve(profiles);
         });
@@ -33,13 +33,13 @@ exports.getProfiles = function() {
 };
 
 // get all profiles ID
-exports.getProfilesId = function() {
+exports.getAllProfilesId = function() {
     return new Promise( (resolve, reject) => {
-    const sql = 'SELECT * FROM profiles';
+        const sql = 'SELECT * FROM profiles';
         db.all(sql, [], (err, rows) => {
             if (err) {reject(err);return;}
-            const profiles = rows.map( (row) => ({profileId: row.profileId}));
-            resolve(profiles);
+            const ids = rows.map( (row) => ({profileId: row.profileId}));
+            resolve(ids);
         });
     });
 };
@@ -55,15 +55,15 @@ exports.getProfileById = function(id) {
                 const profile = {
                     profileId: row.profileId,
                     firstName: row.firstName,
-                    lastName : row.lastName,
-                    phone : row.phone,
-                    email : row.email,
-                    system : row.system,
-                    family : row.family,
+                    lastName: row.lastName,
+                    phone: row.phone,
+                    email: row.email,
+                    system: row.system,
+                    family: row.family,
                     notifications: !!row.notifications,
                     notificationsPhone: !!row.notificationsPhone,
                     notificationsEmail: !!row.notificationsEmail,
-                    avatar : row.avatar
+                    avatar: row.avatar
                 };
                 resolve(profile);
             }
@@ -82,15 +82,15 @@ exports.getAdminProfile = function() {
                 const profile = {
                     profileId: row.profileId,
                     firstName: row.firstName,
-                    lastName : row.lastName,
-                    phone : row.phone,
-                    email : row.email,
-                    system : row.system,
-                    family : row.family,
+                    lastName: row.lastName,
+                    phone: row.phone,
+                    email: row.email,
+                    system: row.system,
+                    family: row.family,
                     notifications: !!row.notifications,
                     notificationsPhone: !!row.notificationsPhone,
                     notificationsEmail: !!row.notificationsEmail,
-                    avatar : row.avatar
+                    avatar: row.avatar
                 };
                 resolve(profile);
             }
@@ -99,7 +99,7 @@ exports.getAdminProfile = function() {
 };
 
 // get all statistics as ProfileStatistics objects
-exports.getStatistics = function() {
+exports.getProfilesStatistics = function() {
     return new Promise( (resolve, reject) => {
         const sql = 'SELECT * FROM statistics';
         db.all(sql, (err, rows) => {
@@ -125,7 +125,47 @@ exports.getProfileStatisticsById = function(profileId) {
     });
 };
 
-/* POST */
+// get all strangers rows as Stranger objects
+exports.getStrangers = function() {
+    return new Promise( (resolve, reject) => {
+        const sql = 'SELECT * FROM strangers';
+        db.all(sql, [], (err, rows) => {
+            if (err) {reject(err);return;}
+            const strangers = rows.map( (row) => ({profileId: row.profileId, detections: row.detections}));
+            resolve(strangers);
+        });
+    });
+};
+
+// get all strangers ID
+exports.getAllStrangersId = function() {
+    return new Promise( (resolve, reject) => {
+        const sql = 'SELECT * FROM strangers';
+        db.all(sql, [], (err, rows) => {
+            if (err) {reject(err);return;}
+            const ids = rows.map( (row) => ({profileId: row.profileId}));
+            resolve(ids);
+        });
+    });
+};
+
+// get stranger object with corresponding profile ID
+exports.getStrangerById = function(profileId) {
+    return new Promise( (resolve, reject) => {
+        const sql = 'SELECT * FROM strangers WHERE profileId=?';
+        db.get(sql, [profileId], (err, row) => {
+            if (err) {reject(err);return;}
+            if (row == undefined) {resolve(null);
+            } else {
+                const stranger = {profileId: row.profileId, detections: row.detections};
+                resolve(stranger);
+            }
+        });
+    });
+};
+
+
+/* POSTS */
 
 exports.generateId = function(length) {
     // id must be a unique string of at least 6 random characters/numbers
@@ -168,7 +208,18 @@ exports.createProfileStatistics = function(profileStatistics) {
     });
 };
 
-/* PUT */
+// upload a new statistics row
+exports.createStranger = function(profileId, detections) {
+    return new Promise((resolve, reject) => {
+        const sql = 'INSERT INTO strangers (profileId, detections) VALUES(?,?)';
+        db.run(sql, [profileId, detections], function (err) {
+            if (err) reject(err);
+            resolve();
+        });
+    });
+};
+
+/* PUTS */
 
 // update a profile row
 exports.updateProfile = function(profile){
@@ -192,10 +243,23 @@ exports.updateProfileStatistics = function(profileStatistics){
     });
 }
 
+// update a strangers row
+exports.updateStranger = function(stranger){
+    return new Promise( (resolve, reject) => {
+        const sql = 'UPDATE strangers SET profileId = ?, detections = ? WHERE profileId = ?';
+        db.run(sql, [stranger.profileId, stranger.detections, stranger.profileId], (err) => {
+            if(err) reject(err);
+            resolve(null);
+        });
+    });
+}
+
+/* DELETES */
+
 // delete a Profile row
 exports.deleteProfile = function(profileId){
     return new Promise( (resolve, reject) => {
-        const sql = 'DELETE FROM profiles WHERE profileId=?';
+        const sql = 'DELETE FROM profiles WHERE profileId = ?';
         db.run(sql, [profileId], (err) => {
             if(err) reject(err);
             resolve(null);
@@ -206,7 +270,18 @@ exports.deleteProfile = function(profileId){
 // delete a ProfileStatistics row
 exports.deleteProfileStatistics = function(profileId){
     return new Promise( (resolve, reject) => {
-        const sql = 'DELETE FROM statistics WHERE profileId=?';
+        const sql = 'DELETE FROM statistics WHERE profileId = ?';
+        db.run(sql, [profileId], (err) => {
+            if(err) reject(err);
+            resolve(null);
+        });
+    });
+}
+
+// delete a strangers row
+exports.deleteStranger = function(profileId){
+    return new Promise( (resolve, reject) => {
+        const sql = 'DELETE FROM strangers WHERE profileId = ?';
         db.run(sql, [profileId], (err) => {
             if(err) reject(err);
             resolve(null);
