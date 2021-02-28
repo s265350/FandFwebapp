@@ -36,7 +36,7 @@ b{font-size: 1.2em;font-weight: normal;}
 .sidebar .nav-link.active{font-weight: bolder !important;}
 
 /* Navbar */
-.navbar{z-index: 2;background-image: url('svg/sidemenu.svg');background-repeat: no-repeat;background-size: cover;}
+.navbar{z-index: 2;background-image: url('svg/sidebar.svg');background-repeat: no-repeat;background-size: cover;}
 .navbar .brand{font-size: 1.8em;font-weight: lighter;}
 .navbar .founder{font-size: .8em;font-weight: bolder;}
 .navbar .navbar-toggler {right: .8em;}

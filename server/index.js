@@ -74,7 +74,7 @@ app.get('/statistics/:profileId', (req, res) => {
 app.get('/strangers', (req, res) => {
   fs.readdir(`${__dirname}/faces/strangers`, (err, names) => {
     if(err) { res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) }
-    res.json(names.filter(function(name){return !name.includes('DS_Store');}));
+    res.json(names?.filter(function(name){return !name.includes('DS_Store');}));
   });
 });
 
