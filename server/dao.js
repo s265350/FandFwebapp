@@ -187,9 +187,7 @@ exports.generateId = function(length) {
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
-        // id must be a unique string of 6 random characters/numbers
         profile.profileId = await this.generateId(6);
-        // save
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
             if (err) reject(err);
             resolve(profile.profileId);
@@ -203,18 +201,19 @@ exports.createProfileStatistics = function(profileStatistics) {
         const sql = 'INSERT INTO statistics (profileId, faces, unrecognized) VALUES(?,?,?)';
         db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized], function (err) {
             if (err) reject(err);
-            resolve();
+            resolve(profileStatistics.profileId);
         });
     });
 };
 
 // upload a new statistics row
-exports.createStranger = function(profileId, detections) {
+exports.createStranger = function(stranger) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO strangers (profileId, detections) VALUES(?,?)';
-        db.run(sql, [profileId, detections], function (err) {
+        stranger.profileId = await this.generateId(8);
+        db.run(sql, [stranger.profileId, stranger.detections], function (err) {
             if (err) reject(err);
-            resolve();
+            resolve(stranger.profileId);
         });
     });
 };

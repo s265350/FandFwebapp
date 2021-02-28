@@ -153,27 +153,38 @@ app.post('/faces/profiles', [], (req, res) => {
 // Request body: BASE64 image to save
 app.post('/faces', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
-  dao.generateId(8)
-    .then( (newId) => {
-        loadImage(req.body.imageBase64)
-          .then(image => {
-            const results = await facerecognition.identify(image);
-            results.forEach(result => {
-              if(result.name == 'unknown'){
-                const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
-                canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
-                const buffer = canvas.toBuffer('image/png');
-                fs.writeFileSync(`${__dirname}/faces/strangers/${newId}.png`, buffer);
-                dao.createStranger({profileId: newId, detections: 1})
-                  .then( () => res.status(200).end() )
-                  .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
-              } else {
-
-              }
-            });
-          });
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({ status: 'success', result: newId}));
+  loadImage(req.body.imageBase64)
+    .then(image => {
+      const results = await facerecognition.identify(image);
+      results.forEach(result => {
+        if(result.name == 'unknown'){
+          dao.createStranger({profileId: '', detections: 1})
+            .then( (id) => {
+              const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+              canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
+              const buffer = canvas.toBuffer('image/png');
+              fs.writeFileSync(`${__dirname}/faces/strangers/${id}.png`, buffer);
+              res.status(200).end();
+            })
+            .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+        } else {
+          if(result.isStranger){
+            dao.getStrangerById(result.name)
+              .then( (stranger) => {
+                stranger.detections++;
+                dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+              })
+              .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+          } else {
+            dao.getProfileStatisticsById(result.name)
+              .then( (profileStatistics) => {
+                profileStatistics.detections++;
+                dao.updateStranger(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+              })
+              .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+          }
+        }
+      });
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });

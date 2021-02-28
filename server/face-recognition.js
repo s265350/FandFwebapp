@@ -3,6 +3,7 @@
 
 'use strict';
 
+import * as dao from './dao.js';
 import * as faceapi from './face-api.min.js';
 
 let faceMatcherProfiles;
@@ -39,6 +40,7 @@ exports.getProfileFaceMatcher = function() {
 
 exports.getStrangersFaceMatcher = function() {
     // label stranger images
+    const strangers = ;
     return new Promise.all(
         strangers.map(async stranger => {
             const descriptions = []
@@ -60,16 +62,14 @@ exports.identify = function(image) {
     const resizedDetections = faceapi.resizeResults(detections, displaySize);
     const results = [];
     resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor)).forEach((resultP, i) => {
-        let { x, y, width, height } = resizedDetections[i].detection.box;
+        const { x, y, width, height } = resizedDetections[i].detection.box;
         let name = resultP.toString().split(' ')[0];
-        let newStranger = false;
+        let isStranger = false;
         if (name == 'unknown' && faceMatcherStrangers && faceMatcherStrangers.length > 0) {
+            isStranger = true;
             name = faceMatcherStrangers.findBestMatch(resizedDetections[i].descriptor).toString().split(' ')[0];
-            if(name != 'unknown'){
-                newStranger = true;
-            }
         }
-        results.push({ name: name, newStranger: newStranger, x: x - width, y: y - height, width: width * 4, height: height * 4 });
+        results.push({ name: name, isStranger: isStranger, x: x - width, y: y - height, width: width * 4, height: height * 4 });
     });
     return results;
 }
