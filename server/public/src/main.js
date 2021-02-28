@@ -3,6 +3,8 @@ import * as Video from './video.js';
 import * as Recognize from './page_recognize.js';
 import * as Profile from './page_profile.js';
 
+let loggedProfile;
+
 window.addEventListener('load', () => {
     // sidebar listeners
     document.getElementById('sideHome').addEventListener('click', () => {loadHome();});
@@ -18,11 +20,10 @@ window.addEventListener('load', () => {
     else if (Notification.permission !== "denied") Notification.requestPermission();
 });
 
-async function strangerNotification(imageBase64){
-    const loggedProfile = await Api.getAdminProfile('Admin');
+function pushNotification(imageBase64){
     const subject = `F&F System alert`;
     const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
-    if (Notification.permission === 'granted' && loggedProfile.notifications){
+    if (Notification.permission === 'granted'){
         const notification = new Notification(subject, {
             body: "Don't worry! An image of his face was saved",
             icon: "../svg/logo.png",
@@ -31,9 +32,20 @@ async function strangerNotification(imageBase64){
         });
         notification.onclick = function() {loadRecognize();};
     }
-    // for these is necessary to create an .env file and insert the credentials for Mandrill and Twilio
-    //if(loggedProfile.notificationsEmail) await Api.sendEmailNotification(loggedProfile.email, loggedProfile.firstName, subject, message, imageBase64);
-    //if(loggedProfile.notificationsPhone) await Api.sendSmsNotification(loggedProfile.phone, loggedProfile.firstName, subject, message, imageBase64);
+}
+
+async function emailNotification(imageBase64){
+    // for this is necessary to create an .env file and insert the credentials for Mandrill
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    await Api.sendEmailNotification(loggedProfile.email, loggedProfile.firstName, subject, message, imageBase64);
+}
+
+async function smsNotification(imageBase64){
+    // for this is necessary to create an .env file and insert the credentials for Mandrill
+    const subject = `F&F System alert`;
+    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
+    await Api.sendSmsNotification(loggedProfile.phone, loggedProfile.firstName, subject, message, imageBase64);
 }
 
 function loadHome(){
@@ -138,4 +150,4 @@ async function loadAboutUs(){
     div.appendChild(element);
 }
 
-export {loadRecognize, loadProfile, strangerNotification};
+export {loadRecognize, loadProfile, pushNotification, emailNotification, smsNotification};
