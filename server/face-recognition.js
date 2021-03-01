@@ -14,43 +14,33 @@ exports.loadModels = function(url) {
         faceapi.nets.faceLandmark68Net.loadFromUri(url),
         faceapi.nets.faceRecognitionNet.loadFromUri(url),
         faceapi.nets.ssdMobilenetv1.loadFromUri(url)
-    ]).then(setup);
+    ]).then(getFaceMatchers);
 }
 
-exports.setup = function(){
-    const labeledProfilesDescriptors = await getProfileFaceMatcher();
-    if(labeledProfilesDescriptors && labeledProfilesDescriptors.length > 0) faceMatcherProfiles =  new faceapi.FaceMatcher(labeledProfilesDescriptors, 0.6);
-    const labeledStrangersDescriptors = await getStrangersFaceMatcher();
-    if(labeledStrangersDescriptors && labeledStrangersDescriptors.length > 0) faceMatcherStrangers =  new faceapi.FaceMatcher(labeledStrangersDescriptors, 0.6);
+exports.getFaceMatchers = function(){
+    faceMatcherProfiles = await getFaceMatcher(false);
+    if(!faceMatcherProfiles || faceMatcherProfiles.length <= 0)console.log('there are no profile faces');
+    faceMatcherStrangers = await getFaceMatcher(true);
+    if(!faceMatcherStrangers || faceMatcherStrangers.length <= 0)console.log('there are no stranger faces');
 }
 
-exports.getProfileFaceMatcher = function() {
-    // label profile images
-    return new Promise.all(
-        profiles.map(async profile => {
+exports.getFaceMatcher = function(stranger) {
+    // label images
+    let people;
+    if(stranger) people = await dao.getStrangers();
+    else people = await dao.getProfiles();
+    const labeledFaceDescriptors = await new Promise.all(
+        people.map(async person => {
             const descriptions = []
-            const img = await faceapi.fetchImage(await Api.getImage(profile.avatar, false))
+            const img = await faceapi.fetchImage(await Api.getImage(person.avatar, stranger))
             const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            if (!detections) {console.log(`no faces detected for ${profile.profileId}`)}
+            if (!detections) {console.log(`no faces detected for ${person.profileId}`);return undefined;}
             else descriptions.push(detections.descriptor)
-            return new faceapi.LabeledFaceDescriptors(profile.profileId, descriptions);
+            return new faceapi.LabeledFaceDescriptors(person.profileId, descriptions);
         })
     );
-}
-
-exports.getStrangersFaceMatcher = function() {
-    // label stranger images
-    const strangers = await dao.getAllStrangersId();
-    return new Promise.all(
-        strangers.map(async stranger => {
-            const descriptions = []
-            const img = await faceapi.fetchImage(await Api.getImage(stranger, true))
-            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            if (!detections) {console.log(`no faces detected for ${stranger}`);await Api.deleteImage(stranger, true);}
-            else descriptions.push(detections.descriptor)
-            return new faceapi.LabeledFaceDescriptors(stranger, descriptions);
-        })
-    )
+    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0) return undefined;
+    return  new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
 }
 
 exports.identify = function(image) {

@@ -107,7 +107,7 @@ app.get('/faces/:filename', (req, res) => {
 // Request body: object describing a Profile { profileId*, firstName*, lastName, phone*, email, system*, family, notifications, notificationsPhone, notificationsEmail }
 app.post('/profiles', [], (req, res) => {
   if(!req.body.firstName || !req.body.phone || !req.body.system) res.status(400).end();
-  dao.createProfile({profileId: '',firstName: req.body.firstName,lastName: req.body.lastName,phone: req.body.phone,email: req.body.email,system: req.body.system,family: req.body.family,notifications: req.body.notifications,notificationsPhone: req.body.notificationsPhone,notificationsEmail: req.body.notificationsEmail,avatar: req.body.avatar})
+  dao.createProfile({firstName: req.body.firstName, lastName: req.body.lastName, phone: req.body.phone, email: req.body.email, system: req.body.system, family: req.body.family, notifications: req.body.notifications, notificationsPhone: req.body.notificationsPhone, notificationsEmail: req.body.notificationsEmail})
     .then( (profileId) => {
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({ status: 'success', profileId: profileId}));
@@ -129,28 +129,29 @@ app.post('/statistics', [], (req, res) => {
 app.post('/strangers', [], (req, res) => {
   if(!req.body.profileId || !req.body.detections) res.status(400).end();
   dao.createStranger({profileId: req.body.profileId, detections: req.body.detections})
-    .then( () => res.status(200).end() )
+    .then( (profileId) => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+    })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // POST upload a new image in 'faces' folder
 // Request body: image FILE to upload and the profileId
 app.post('/faces/profiles', [], (req, res) => {
-  if(!req.body.profileId || !req.body.src) res.status(400).end();
-  const image = req.body.src;
-  const name = `${req.body.profileId}.png`;
-  image.mv(`${__dirname}/faces/profiles/${name}`, (error) => {
-    if(error) {
-      res.writeHead(500, {'Content-Type': 'application/json'})
-      res.end(JSON.stringify({ status: 'error', message: error }));
-      return;
-    }
-    res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', directory: name}));
-  });
+  if(!req.body.profileId || !req.body.imageBase64) res.status(400).end();
+  loadImage(req.body.imageBase64)
+    .then( image => {
+      const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+      canvas.getContext('2d').drawImage(image, 0, 0);
+      const buffer = canvas.toBuffer('image/png');
+      fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer);
+      const result = await facerecognition.identify(image);
+    })
+    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// POST upload a screenshot in 'faces' folder
+// POST upload a screenshot
 // Request body: BASE64 image to save
 app.post('/faces', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
@@ -159,12 +160,12 @@ app.post('/faces', [], (req, res) => {
       const results = await facerecognition.identify(image);
       results.forEach(result => {
         if(result.name == 'unknown'){
-          dao.createStranger({profileId: '', detections: 1})
-            .then( (id) => {
+          dao.createStranger()
+            .then( (profileId) => {
               const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
               canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
               const buffer = canvas.toBuffer('image/png');
-              fs.writeFileSync(`${__dirname}/faces/strangers/${id}.png`, buffer);
+              fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
               //update facematcherstrangers
             })
             .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );

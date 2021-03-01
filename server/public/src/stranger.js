@@ -3,6 +3,7 @@
 class Stranger {
     constructor(profileId){
         this.profileId = profileId;
+        this.avatar = profileId+".png";
         this.detections = 1; // considering the profile image
     }
     static from (json) {

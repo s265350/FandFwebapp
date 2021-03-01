@@ -57,13 +57,13 @@ async function takeScreenshot(video){
     canvas.width = width;
     canvas.height = height;
     canvas.getContext('2d').drawImage(video, 0, 0);
+    await Api.uploadImage(canvas.toDataURL('image/png'));
     /*// for now notifications are sent only to the admin (because is the only one that can "log in" and email and sms are not set)
     let notificationEnabled = false;
     profiles.forEach(p => {if (p.system === 'Admin' && p.notifications == true)notificationEnabled = true;});
     if (notificationEnabled == true) Main.pushNotification(imageBase64);
     //await Main.emailNotification(imageBase64); // must be activated inserting credentials
     //await Main.smsNotification(imageBase64); // must be activated inserting credentials*/
-    await Api.uploadScreenshot(canvas.toDataURL('image/png'));
 }
 
 export {setup, takeScreenshot};

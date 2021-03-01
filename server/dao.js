@@ -131,7 +131,7 @@ exports.getStrangers = function() {
         const sql = 'SELECT * FROM strangers';
         db.all(sql, [], (err, rows) => {
             if (err) {reject(err);return;}
-            const strangers = rows.map( (row) => ({profileId: row.profileId, detections: row.detections}));
+            const strangers = rows.map( (row) => ({profileId: row.profileId, detections: row.detections, avatar: row.avatar}));
             resolve(strangers);
         });
     });
@@ -157,7 +157,7 @@ exports.getStrangerById = function(profileId) {
             if (err) {reject(err);return;}
             if (row == undefined) {resolve(null);
             } else {
-                const stranger = {profileId: row.profileId, detections: row.detections};
+                const stranger = {profileId: row.profileId, detections: row.detections, avatar: row.avatar};
                 resolve(stranger);
             }
         });
@@ -170,10 +170,8 @@ exports.getStrangerById = function(profileId) {
 exports.generateId = function(length) {
     // id must be a unique string of at least 6 random characters/numbers
     if (length < 6) length = 6;
-    let strangers;
-    let profiles = this.getProfilesId();
-    const response = await fetch(`/strangers`);
-    if (response.ok) strangers = await response.json(); else throw `ERROR fetching /strangers`;
+    let strangers = this.getAllStrangersId();
+    let profiles = this.getAllProfilesId();
     let id;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     while (!id || id == '' || profiles.includes(id) || strangers.includes(id)){
@@ -187,10 +185,10 @@ exports.generateId = function(length) {
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
-        profile.profileId = await this.generateId(6);
-        db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar], function (err) {
+        const profileId = await this.generateId(6);
+        db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
             if (err) reject(err);
-            resolve(profile.profileId);
+            resolve(profileId);
         });
     });
 };
@@ -207,13 +205,13 @@ exports.createProfileStatistics = function(profileStatistics) {
 };
 
 // upload a new statistics row
-exports.createStranger = function(stranger) {
+exports.createStranger = function() {
     return new Promise((resolve, reject) => {
-        const sql = 'INSERT INTO strangers (profileId, detections) VALUES(?,?)';
-        stranger.profileId = await this.generateId(8);
-        db.run(sql, [stranger.profileId, stranger.detections], function (err) {
+        const sql = 'INSERT INTO strangers (profileId, detections, avatar) VALUES(?,?,?)';
+         const profileId = await this.generateId(8);
+        db.run(sql, [profileId, 1, profileId+"png"], function (err) {
             if (err) reject(err);
-            resolve(stranger.profileId);
+            resolve(profileId);
         });
     });
 };
@@ -245,8 +243,8 @@ exports.updateProfileStatistics = function(profileStatistics){
 // update a strangers row
 exports.updateStranger = function(stranger){
     return new Promise( (resolve, reject) => {
-        const sql = 'UPDATE strangers SET profileId = ?, detections = ? WHERE profileId = ?';
-        db.run(sql, [stranger.profileId, stranger.detections, stranger.profileId], (err) => {
+        const sql = 'UPDATE strangers SET profileId = ?, detections = ?, avatar = ? WHERE profileId = ?';
+        db.run(sql, [stranger.profileId, stranger.detections, stranger.avatar, stranger.profileId], (err) => {
             if(err) reject(err);
             resolve(null);
         });

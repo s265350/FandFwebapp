@@ -166,10 +166,10 @@ async function createStranger(stranger) {
 }
 
 // upload an image in "profiles" or "strangers" folder
-async function changeProfileImage(profileId, src){
+async function changeProfileImage(profileId, imageBase64){
     const formData = new FormData();
     formData.append('profileId', profileId);
-    formData.append('src', src);
+    formData.append('imageBase64', imageBase64);
     return new Promise( (resolve, reject) => {
         fetch(`/faces/profiles`, {method: 'POST', body: formData})
         .then( (response) => {
