@@ -165,7 +165,7 @@ async function createStranger(stranger) {
     });
 }
 
-// upload an image in "profiles" or "strangers" folder
+// upload the new image for the given profileId
 async function changeProfileImage(profileId, imageBase64){
     const formData = new FormData();
     formData.append('profileId', profileId);

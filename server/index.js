@@ -142,11 +142,23 @@ app.post('/faces/profiles', [], (req, res) => {
   if(!req.body.profileId || !req.body.imageBase64) res.status(400).end();
   loadImage(req.body.imageBase64)
     .then( image => {
-      const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
-      canvas.getContext('2d').drawImage(image, 0, 0);
-      const buffer = canvas.toBuffer('image/png');
-      fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer);
-      const result = await facerecognition.identify(image);
+      facerecognition.identifySingle(image).then(result => {
+        if(!result) return undefined;
+        let profileId;
+        if(result.name != 'unknown' && !result.isStranger && req.body.profileId == result.name){
+          profileId = result.name;
+          const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+          canvas.getContext('2d').drawImage(image, 0, 0);
+          const buffer = canvas.toBuffer('image/png');
+          fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer);
+        }
+        return profileId;
+      })
+      .then( profileId => {
+        if(profileId) await dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false));
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+      });
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -157,19 +169,26 @@ app.post('/faces', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
   loadImage(req.body.imageBase64)
     .then(image => {
-      const results = await facerecognition.identify(image);
+      const results = await facerecognition.identifyMultiple(image);
+      let profileIds = [];
+      if(!results || results.length <= 0){
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ status: 'success', profileIds: undefined}));
+      }
       results.forEach(result => {
         if(result.name == 'unknown'){
           dao.createStranger()
             .then( (profileId) => {
+              profileIds.push(profileId);
               const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
               canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
               const buffer = canvas.toBuffer('image/png');
               fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
-              //update facematcherstrangers
+              await dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true));
             })
             .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
         } else {
+          profileIds.push(result.name);
           if(result.isStranger){
             dao.getStrangerById(result.name)
               .then( (stranger) => {
@@ -188,7 +207,7 @@ app.post('/faces', [], (req, res) => {
         }
       });
       res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+      res.end(JSON.stringify({ status: 'success', profileIds: profileIds}));
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -323,7 +342,13 @@ app.delete(`/strangers/:profileId`, (req, res) => {
 
 /* Server Activation */
 app.listen(port, () => {
-  console.log(`Loading models from ${process.env.MODELS_URL}`);
-  facerecognition.loadModels(process.env.MODELS_URL);
+  console.log(`Loading models from ${process.env.MODELS_URL}...`);
+  facerecognition.loadModels(process.env.MODELS_URL).then( () => {
+    console.log(`Initialising matchers...`);
+    return new Promise.all([
+      dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false)),
+      dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true))
+    ]);
+  });
   console.log(`Listening to requests on http://localhost:${port}`);
 });
