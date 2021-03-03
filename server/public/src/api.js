@@ -99,10 +99,7 @@ async function getStrangerById(profileId) {
 // get profile image or stranger image
 async function getImage(filename, stranger) {
     const path = (stranger)? "strangers" : "profiles";
-    const response = await fetch(`/faces/${path}/${filename}`, {
-        method: 'GET',
-        body: JSON.stringify(stranger),
-    });
+    const response = await fetch(`/faces/${path}/${filename}`);
     if(response.ok){
         return response.url;
     } else

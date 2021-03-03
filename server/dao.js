@@ -185,10 +185,12 @@ exports.generateId = function(length) {
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
-        const profileId = await this.generateId(6);
-        db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
-            if (err) reject(err);
-            resolve(profileId);
+        this.generateId(6).then( profileId => {
+            db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
+                if (err) reject(err);
+                resolve(profileId);
+            })
+            .catch( (err) => {reject(err);return;});
         });
     });
 };
@@ -200,7 +202,7 @@ exports.createProfileStatistics = function(profileStatistics) {
         db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized], function (err) {
             if (err) reject(err);
             resolve(profileStatistics.profileId);
-        });
+        })
     });
 };
 
@@ -208,11 +210,13 @@ exports.createProfileStatistics = function(profileStatistics) {
 exports.createStranger = function() {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO strangers (profileId, detections, avatar) VALUES(?,?,?)';
-         const profileId = await this.generateId(8);
-        db.run(sql, [profileId, 1, profileId+"png"], function (err) {
-            if (err) reject(err);
-            resolve(profileId);
-        });
+        this.generateId(8).then(profileId => {
+            db.run(sql, [profileId, 1, profileId+"png"], function (err) {
+                if (err) reject(err);
+                resolve(profileId);
+            });
+        })
+        .catch( (err) => {reject(err);return;});
     });
 };
 

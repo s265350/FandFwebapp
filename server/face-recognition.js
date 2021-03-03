@@ -3,20 +3,18 @@
 
 'use strict';
 
-import * as faceapi from './face-api.min.js';
+const faceapi = require('face-api.js');
 
 let faceMatcherProfiles;
 let faceMatcherStrangers;
 
-exports.loadModels = function(url) {
-    return new Promise.all([
-        faceapi.nets.faceLandmark68Net.loadFromUri(url),
-        faceapi.nets.faceRecognitionNet.loadFromUri(url),
-        faceapi.nets.ssdMobilenetv1.loadFromUri(url)
-    ]);
-}
+exports.loadModels = (url) => Promise.all([
+    faceapi.nets.faceLandmark68Net.loadFromUri(url),
+    faceapi.nets.faceRecognitionNet.loadFromUri(url),
+    faceapi.nets.ssdMobilenetv1.loadFromUri(url)
+]);
 
-exports.updateFaceMatcher = function(people, stranger) {
+exports.updateFaceMatcher = async (people, stranger) => {
     // label images
     if(!people || people.length <= 0) return undefined;
     const labeledFaceDescriptors = await new Promise.all(
@@ -35,7 +33,7 @@ exports.updateFaceMatcher = function(people, stranger) {
     return 0; // just to know the result of the operation
 }
 
-exports.identifyMultiple = function(image) {
+exports.identifyMultiple = async (image) => {
     // return an object with the name id of the face and the box sizes that contains it
     if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) {return undefined;}
     const displaySize = { width: image.width, height: image.height };
@@ -56,7 +54,7 @@ exports.identifyMultiple = function(image) {
     return results;
 }
 
-exports.identifySingle = function(image) {
+exports.identifySingle = async (image) => {
     // return an object with the name id of the face and the box sizes that contains it
     if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) {return undefined;}
     const displaySize = { width: image.width, height: image.height };

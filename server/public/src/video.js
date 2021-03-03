@@ -6,9 +6,6 @@ import * as Api from './api.js';
 import * as Main from './main.js';
 
 let detectionInterval;
-let profiles;
-let strangers;
-let statistics;
 
 async function setup(){
     // the user is free to choose any video input attached to the device
@@ -25,12 +22,6 @@ async function setup(){
     document.getElementById('videoSelector').addEventListener('change', getStream);
     document.getElementById('video').addEventListener('mousedown', () => {document.getElementById('video').style.opacity = 0.3;});
     document.getElementById('video').addEventListener('mouseup', () => {document.getElementById('video').style.opacity = 1;});
-    //carico descriptor da immagini etichettate
-    profiles = await Api.getAllProfiles();
-    strangers = await Api.getStrangers();
-    statistics = await Api.getAllStatistics();
-    faceMatcherProfiles = await getProfileFaceMatcher();
-    faceMatcherStrangers = await getStrangersFaceMatcher();
 }
 
 function getStream(){
@@ -44,7 +35,7 @@ function getStream(){
 }
 
 document.getElementById('video').addEventListener('play', () => {
-    detectionInterval = setInterval( () => takeScreenshot(document.getElementById('video')), 1000);
+    detectionInterval = setInterval( () => takeScreenshot(), 1000);
 });
 
 document.getElementById('video').addEventListener('suspend', () => {
@@ -52,11 +43,11 @@ document.getElementById('video').addEventListener('suspend', () => {
     document.getElementById('video').pause();
 });
 
-async function takeScreenshot(video){
+async function takeScreenshot(){
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.width = document.getElementById('video').videoWidth;
+    canvas.height = document.getElementById('video').videoHeight;
+    canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
     await Api.uploadImage(canvas.toDataURL('image/png'));
     /*// for now notifications are sent only to the admin (because is the only one that can "log in" and email and sms are not set)
     let notificationEnabled = false;

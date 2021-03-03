@@ -4,12 +4,14 @@
 
 /* Required External Modules */
 const express = require('express');
+require('dotenv').config();
+
 const fileupload = require('express-fileupload');
 const fs = require('fs');
-require('dotenv').config();
+const { createCanvas, loadImage } = require('canvas');
+
 const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-const { createCanvas, loadImage } = require('canvas')
 
 const dao = require('./dao.js');
 const facerecognition = require('./face-recognition.js');
@@ -99,8 +101,7 @@ app.get('/strangers/:profileId', (req, res) => {
 // Request parameters: name of the image file
 app.get('/faces/:filename', (req, res) => {
   if(!req.params.filename) res.status(400).end();
-  const path = (req.body.stranger)? "strangers" : "profiles";
-  res.sendFile(`${__dirname}/faces/${path}/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+  res.sendFile(`${__dirname}/faces/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
 });
 
 // POST upload a new profile row
@@ -155,9 +156,16 @@ app.post('/faces/profiles', [], (req, res) => {
         return profileId;
       })
       .then( profileId => {
-        if(profileId) await dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false));
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+        if(profileId) dao.getProfiles()
+          .then(profiles => {return updateFaceMatcher(profiles, false);}).then( result => {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+          })
+          .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+        else{
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+        }
       });
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
@@ -168,47 +176,47 @@ app.post('/faces/profiles', [], (req, res) => {
 app.post('/faces', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
   loadImage(req.body.imageBase64)
-    .then(image => {
-      const results = await facerecognition.identifyMultiple(image);
-      let profileIds = [];
-      if(!results || results.length <= 0){
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({ status: 'success', profileIds: undefined}));
-      }
-      results.forEach(result => {
-        if(result.name == 'unknown'){
-          dao.createStranger()
-            .then( (profileId) => {
-              profileIds.push(profileId);
-              const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
-              canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
-              const buffer = canvas.toBuffer('image/png');
-              fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
-              await dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true));
-            })
-            .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
-        } else {
-          profileIds.push(result.name);
-          if(result.isStranger){
-            dao.getStrangerById(result.name)
-              .then( (stranger) => {
-                stranger.detections++;
-                dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+    .then(image => { return facerecognition.identifyMultiple(image)})
+      .then( results => {
+        let profileIds = [];
+        if(!results || results.length <= 0){
+          res.writeHead(200, {'Content-Type': 'application/json'});
+          res.end(JSON.stringify({ status: 'success', profileIds: undefined}));
+        }
+        results.forEach(result => {
+          if(result.name == 'unknown'){
+            dao.createStranger()
+              .then( (profileId) => {
+                profileIds.push(profileId);
+                const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+                canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
+                const buffer = canvas.toBuffer('image/png');
+                fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
               })
+              .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)))
               .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
           } else {
-            dao.getProfileStatisticsById(result.name)
-              .then( (profileStatistics) => {
-                profileStatistics.faces++;
-                dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
-              })
-              .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+            profileIds.push(result.name);
+            if(result.isStranger){
+              dao.getStrangerById(result.name)
+                .then( (stranger) => {
+                  stranger.detections++;
+                  dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+                })
+                .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+            } else {
+              dao.getProfileStatisticsById(result.name)
+                .then( (profileStatistics) => {
+                  profileStatistics.faces++;
+                  dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+                })
+                .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+            }
           }
-        }
-      });
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileIds: profileIds}));
-    })
+        });
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({ status: 'success', profileIds: profileIds}));
+      })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -343,12 +351,12 @@ app.delete(`/strangers/:profileId`, (req, res) => {
 /* Server Activation */
 app.listen(port, () => {
   console.log(`Loading models from ${process.env.MODELS_URL}...`);
-  facerecognition.loadModels(process.env.MODELS_URL).then( () => {
-    console.log(`Initialising matchers...`);
-    return new Promise.all([
-      dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false)),
-      dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true))
-    ]);
-  });
+  facerecognition.loadModels(process.env.MODELS_URL)
+    .then( () => {
+      console.log(`Initialising matchers...`);
+      dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false))
+        .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)));
+    })
+    .catch( (err) => {reject(err);return;});;
   console.log(`Listening to requests on http://localhost:${port}`);
 });
