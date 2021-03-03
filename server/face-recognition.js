@@ -4,33 +4,48 @@
 'use strict';
 
 const faceapi = require('face-api.js');
+const canvas = require('canvas');
+const fetch = require('node-fetch');
+const fs = require('fs');
+
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+faceapi.env.monkeyPatch({ fetch: fetch });
 
 let faceMatcherProfiles;
 let faceMatcherStrangers;
 
 exports.loadModels = (url) => Promise.all([
-    faceapi.nets.faceLandmark68Net.loadFromUri(url),
-    faceapi.nets.faceRecognitionNet.loadFromUri(url),
-    faceapi.nets.ssdMobilenetv1.loadFromUri(url)
+    faceapi.nets.faceLandmark68Net.loadFromDisk(url),
+    faceapi.nets.faceRecognitionNet.loadFromDisk(url),
+    faceapi.nets.ssdMobilenetv1.loadFromDisk(url)
 ]);
 
-exports.updateFaceMatcher = async (people, stranger) => {
+exports.updateFaceMatcher = async (stranger) => {
     // label images
-    if(!people || people.length <= 0) return undefined;
-    const labeledFaceDescriptors = await new Promise.all(
-        people.map(async person => {
-            const descriptions = []
-            const img = await faceapi.fetchImage(await Api.getImage(person.avatar, stranger))
-            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
-            if (!detections) {return undefined;}
-            else descriptions.push(detections.descriptor)
-            return new faceapi.LabeledFaceDescriptors(person.profileId, descriptions);
-        })
-    );
+    const folder = (stranger)? "strangers" : "profiles";
+    console.log(`Computing ${folder} Face Matcher...`);
+    const labeledFaceDescriptors = await getlabeledFaceDescriptors(`${__dirname}/faces/${folder}`);
     if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0){return undefined;}
     if(stranger) faceMatcherStrangers = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
     else faceMatcherProfiles = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-    return 0; // just to know the result of the operation
+    console.log(`... ${folder} Face Matchers is up to date`);
+}
+
+async function getlabeledFaceDescriptors(folder) {
+    const labels = fs.readdirSync(folder).filter(f => !f.includes('DS_Store'));
+    return Promise.all(
+        labels.map(async label => {
+            const descriptions = [];
+            console.log(`${folder}/${label}`);
+            const img = await canvas.loadImage(`${folder}/${label}`);
+            const fetchedImage = await faceapi.fetchImage(img);
+            const detections = await faceapi.detectSingleFace(fetchedImage).withFaceLandmarks().withFaceDescriptor()
+            if (!detections) {return undefined;}
+            else descriptions.push(detections.descriptor)
+            return new faceapi.LabeledFaceDescriptors(label.split('.')[0], descriptions);
+        })
+    )
 }
 
 exports.identifyMultiple = async (image) => {

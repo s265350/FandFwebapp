@@ -97,11 +97,18 @@ app.get('/strangers/:profileId', (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// GET image form 'profiles' or 'strangers' folder
+// GET image form 'profiles' folder
 // Request parameters: name of the image file
-app.get('/faces/:filename', (req, res) => {
+app.get('/faces/profiles/:filename', (req, res) => {
   if(!req.params.filename) res.status(400).end();
-  res.sendFile(`${__dirname}/faces/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+  res.sendFile(`${__dirname}/faces/profiles/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+});
+
+// GET image form strangers' folder
+// Request parameters: name of the image file
+app.get('/faces/strangers/:filename', (req, res) => {
+  if(!req.params.filename) res.status(400).end();
+  res.sendFile(`${__dirname}/faces/strangers/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
 });
 
 // POST upload a new profile row
@@ -242,7 +249,7 @@ app.post('/faces/:folder', [], (req, res) => {
 // POST email
 // Request parameters: 
 // Request body: email address, name, subject, message
-app.post( '/sendemail', function(req, res){
+app.post('/sendemail', function(req, res){
   if(!req.body.email || !req.body.name || !req.body.subject || !req.body.message || !req.body.imageBase64) res.status(400).end();
   // eventual spam protection or checks.
   mandrill('/messages/send', {
@@ -261,7 +268,7 @@ app.post( '/sendemail', function(req, res){
 // POST sms
 // Request parameters: 
 // Request body: phone number, message, (optional) image
-app.post( '/sendsms', function(req, res){
+app.post('/sendsms', function(req, res){
   if(!req.body.phone || !req.body.message) res.status(400).end();
   // if an image is passed send MMS else send SMS
   if(req.body.imageBase64)
@@ -350,13 +357,10 @@ app.delete(`/strangers/:profileId`, (req, res) => {
 
 /* Server Activation */
 app.listen(port, () => {
-  console.log(`Loading models from ${process.env.MODELS_URL}...`);
-  facerecognition.loadModels(process.env.MODELS_URL)
-    .then( () => {
-      console.log(`Initialising matchers...`);
-      dao.getProfiles().then(profiles => updateFaceMatcher(profiles, false))
-        .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)));
-    })
-    .catch( (err) => {reject(err);return;});;
-  console.log(`Listening to requests on http://localhost:${port}`);
+  console.log(`Loading models...`);
+  Promise.all([
+    facerecognition.loadModels(__dirname+process.env.MODELS_URL),
+    facerecognition.updateFaceMatcher(false),
+    facerecognition.updateFaceMatcher(true)
+  ]).then(console.log(`Listening to requests on http://localhost:${port}`));
 });
