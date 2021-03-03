@@ -200,8 +200,7 @@ app.post('/faces', [], (req, res) => {
                 const buffer = canvas.toBuffer('image/png');
                 fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
               })
-              .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)))
-              .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+              .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)));
           } else {
             profileIds.push(result.name);
             if(result.isStranger){
@@ -209,15 +208,13 @@ app.post('/faces', [], (req, res) => {
                 .then( (stranger) => {
                   stranger.detections++;
                   dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
-                })
-                .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+                });
             } else {
               dao.getProfileStatisticsById(result.name)
                 .then( (profileStatistics) => {
                   profileStatistics.faces++;
                   dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
-                })
-                .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
+                });
             }
           }
         });
@@ -356,10 +353,10 @@ app.delete(`/strangers/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Loading models...`);
+  await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
   Promise.all([
-    facerecognition.loadModels(__dirname+process.env.MODELS_URL),
     facerecognition.updateFaceMatcher(false),
     facerecognition.updateFaceMatcher(true)
   ]).then(console.log(`Listening to requests on http://localhost:${port}`));

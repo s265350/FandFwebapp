@@ -24,12 +24,13 @@ exports.loadModels = (url) => Promise.all([
 exports.updateFaceMatcher = async (stranger) => {
     // label images
     const folder = (stranger)? "strangers" : "profiles";
-    console.log(`Computing ${folder} Face Matcher...`);
+    console.time(`Computing ${folder.split('/')[folder.split('/').length-1]} Face Matcher...`);
     const labeledFaceDescriptors = await getlabeledFaceDescriptors(`${__dirname}/faces/${folder}`);
-    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0){return undefined;}
+    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0){console.log(`... ${folder} Face Matcher is empty`);return undefined;}
     if(stranger) faceMatcherStrangers = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
     else faceMatcherProfiles = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-    console.log(`... ${folder} Face Matchers is up to date`);
+    console.timeEnd(`Computing ${folder.split('/')[folder.split('/').length-1]} Face Matcher...`);
+    console.log(`... ${folder} Face Matcher is up to date`);
 }
 
 async function getlabeledFaceDescriptors(folder) {
@@ -37,10 +38,8 @@ async function getlabeledFaceDescriptors(folder) {
     return Promise.all(
         labels.map(async label => {
             const descriptions = [];
-            console.log(`${folder}/${label}`);
             const img = await canvas.loadImage(`${folder}/${label}`);
-            const fetchedImage = await faceapi.fetchImage(img);
-            const detections = await faceapi.detectSingleFace(fetchedImage).withFaceLandmarks().withFaceDescriptor()
+            const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
             if (!detections) {return undefined;}
             else descriptions.push(detections.descriptor)
             return new faceapi.LabeledFaceDescriptors(label.split('.')[0], descriptions);
