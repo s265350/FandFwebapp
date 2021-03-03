@@ -180,44 +180,42 @@ app.post('/faces/profiles', [], (req, res) => {
 
 // POST upload a screenshot
 // Request body: BASE64 image to save
-app.post('/faces', [], (req, res) => {
+app.post('/screenshot', [], (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
   loadImage(req.body.imageBase64)
     .then(image => { return facerecognition.identifyMultiple(image)})
       .then( results => {
         let profileIds = [];
-        if(!results || results.length <= 0){
-          res.writeHead(200, {'Content-Type': 'application/json'});
-          res.end(JSON.stringify({ status: 'success', profileIds: undefined}));
-        }
-        results.forEach(result => {
-          if(result.name == 'unknown'){
-            dao.createStranger()
-              .then( (profileId) => {
-                profileIds.push(profileId);
-                const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
-                canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
-                const buffer = canvas.toBuffer('image/png');
-                fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
-              })
-              .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)));
-          } else {
-            profileIds.push(result.name);
-            if(result.isStranger){
-              dao.getStrangerById(result.name)
-                .then( (stranger) => {
-                  stranger.detections++;
-                  dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
-                });
+        if(results && results.length > 0){
+          results.forEach(result => {
+            if(result.name == 'unknown'){
+              dao.createStranger()
+                .then( (profileId) => {
+                  profileIds.push(profileId);
+                  const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
+                  canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
+                  const buffer = canvas.toBuffer('image/png');
+                  fs.writeFileSync(`${__dirname}/faces/strangers/${profileId}.png`, buffer);
+                })
+                .then(dao.getStrangers().then(strangers => updateFaceMatcher(strangers, true)));
             } else {
-              dao.getProfileStatisticsById(result.name)
-                .then( (profileStatistics) => {
-                  profileStatistics.faces++;
-                  dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
-                });
+              profileIds.push(result.name);
+              if(result.isStranger){
+                dao.getStrangerById(result.name)
+                  .then( (stranger) => {
+                    stranger.detections++;
+                    dao.updateStranger(stranger).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+                  });
+              } else {
+                dao.getProfileStatisticsById(result.name)
+                  .then( (profileStatistics) => {
+                    profileStatistics.faces++;
+                    dao.updateProfileStatistics(profileStatistics).catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );;
+                  });
+              }
             }
-          }
-        });
+          });
+        } else profileIds = undefined;
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify({ status: 'success', profileIds: profileIds}));
       })

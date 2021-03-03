@@ -45,7 +45,6 @@ document.getElementById('video').addEventListener('suspend', () => {
 
 async function takeScreenshot(){
     const canvas = document.createElement('canvas');
-    document.getElementById('main').appendChild(canvas);
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);

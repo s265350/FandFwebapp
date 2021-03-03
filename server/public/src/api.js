@@ -184,8 +184,9 @@ async function changeProfileImage(profileId, imageBase64){
 async function uploadImage(imageBase64){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
+    console.log("uploading image");
     return new Promise( (resolve, reject) => {
-        fetch(`/faces`, {method: 'POST', body: formData})
+        fetch(`/screenshot`, {method: 'POST', body: formData})
         .then( (response) => {
             if(response.ok) resolve(response.json());
             else {
