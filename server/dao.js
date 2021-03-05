@@ -167,11 +167,11 @@ exports.getStrangerById = function(profileId) {
 
 /* POSTS */
 
-exports.generateId = function(length) {
+exports.generateId = async (length) => {
     // id must be a unique string of at least 6 random characters/numbers
     if (length < 6) length = 6;
-    let strangers = this.getAllStrangersId();
-    let profiles = this.getAllProfilesId();
+    const strangers = await this.getAllStrangersId();
+    const profiles = await this.getAllProfilesId();
     let id;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     while (!id || id == '' || profiles.includes(id) || strangers.includes(id)){

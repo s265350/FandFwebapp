@@ -144,24 +144,6 @@ async function createProfileStatistics(profileStatistics) {
     });
 }
 
-// upload a new stranger row
-async function createStranger(stranger) {
-    return new Promise( (resolve, reject) => {
-        fetch(`/strangers`, {
-            method: 'POST',
-            headers:{'Content-Type': 'application/json',},
-            body: JSON.stringify(stranger),
-        }).then( (response) => {
-            if(response.ok) resolve(response.json());
-            else {
-                response.json()
-                    .then( (obj) => {reject(obj);} ) // error msg in the response body
-                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
-            }
-        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
-    });
-}
-
 // upload the new image for the given profileId
 async function changeProfileImage(profileId, imageBase64){
     const formData = new FormData();
@@ -181,14 +163,17 @@ async function changeProfileImage(profileId, imageBase64){
 }
 
 // upload an image
-async function uploadImage(imageBase64){
+async function uploadImage(imageBase64, recentFaces){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
+    formData.append("recentFaces", recentFaces);
     console.log("uploading image");
     return new Promise( (resolve, reject) => {
         fetch(`/screenshot`, {method: 'POST', body: formData})
         .then( (response) => {
-            if(response.ok) resolve(response.json());
+            if(response.ok) {
+                resolve(response.json());
+            }
             else {
                 response.json()
                     .then( (obj) => {reject(obj);} ) // error msg in the response body
@@ -340,7 +325,6 @@ export {
     getImage, 
     createProfile, 
     createProfileStatistics, 
-    createStranger, 
     changeProfileImage, 
     uploadImage,  
     sendEmailNotification, 

@@ -6,6 +6,8 @@ import * as Api from './api.js';
 import * as Main from './main.js';
 
 let detectionInterval;
+let clearRecentsInterval;
+let recentFaces = [];
 
 async function setup(){
     // the user is free to choose any video input attached to the device
@@ -35,26 +37,49 @@ function getStream(){
 }
 
 document.getElementById('video').addEventListener('play', () => {
-    detectionInterval = setInterval( () => takeScreenshot(), 1000);
+    recordingVideo();
 });
 
 document.getElementById('video').addEventListener('suspend', () => {
-    clearInterval(detectionInterval);
-    document.getElementById('video').pause();
+    recordingVideo();
 });
+
+document.getElementById('video').addEventListener('pause', () => {
+    recordingVideo();
+});
+
+function recordingVideo(){
+    if(document.getElementById('video').paused){
+        console.log("startRecording");
+        document.getElementById('video').play();
+        clearRecentsInterval = setInterval( () => recentFaces.length = 0, 30000);
+        detectionInterval = setInterval( () => takeScreenshot(), 3000);
+    } else {
+        console.log("stopRecording");
+        clearInterval(clearRecentsInterval);
+        clearInterval(detectionInterval);
+        document.getElementById('video').pause();
+    }
+}
 
 async function takeScreenshot(){
     const canvas = document.createElement('canvas');
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
-    await Api.uploadImage(canvas.toDataURL('image/png'));
-    /*// for now notifications are sent only to the admin (because is the only one that can "log in" and email and sms are not set)
-    let notificationEnabled = false;
-    profiles.forEach(p => {if (p.system === 'Admin' && p.notifications == true)notificationEnabled = true;});
-    if (notificationEnabled == true) Main.pushNotification(imageBase64);
-    //await Main.emailNotification(imageBase64); // must be activated inserting credentials
-    //await Main.smsNotification(imageBase64); // must be activated inserting credentials*/
+    const base64 = canvas.toDataURL('image/png');
+    const {profileIds, recents} = await Api.uploadImage(base64, recentFaces);
+    recentFaces = recents;
+    // for now notifications are sent only to the admin (because is the only one that "logs in")
+    await Api.getAllProfiles().then(profiles => profiles.forEach(p => {if (p.system === 'Admin'){
+        profileIds.forEach( (id, stranger) => {
+            if(stranger) {
+                if(p.notifications) Main.pushNotification(imageBase64);
+                //if(p.notificationsEmail) await Main.emailNotification(imageBase64); // must be activated inserting credentials in the .env file
+                //if(p.notificationsPhone) await Main.smsNotification(imageBase64); // must be activated inserting credentials in the .env file
+            }
+        });
+    }}));
 }
 
-export {setup, takeScreenshot};
+export {setup, takeScreenshot, recordingVideo};
