@@ -37,19 +37,19 @@ function getStream(){
 }
 
 document.getElementById('video').addEventListener('play', () => {
-    recordingVideo();
+    recordingVideo(true);
 });
 
 document.getElementById('video').addEventListener('suspend', () => {
-    recordingVideo();
+    recordingVideo(true);
 });
 
 document.getElementById('video').addEventListener('pause', () => {
-    recordingVideo();
+    recordingVideo(true);
 });
 
-function recordingVideo(){
-    if(document.getElementById('video').paused){
+function recordingVideo(listenerCall){
+    if((listenerCall)? !document.getElementById('video').paused : document.getElementById('video').paused){
         console.log("startRecording");
         document.getElementById('video').play();
         clearRecentsInterval = setInterval( () => recentFaces.length = 0, 30000);
