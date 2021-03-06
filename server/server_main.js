@@ -16,7 +16,7 @@ const main = express();
 const port = process.env.MAINPORT || '3999';
 
 /* Process body content */
-web.use(express.json());
+main.use(express.json());
 
 /* Routes Definitions */
 main.use(express.static('public'));
