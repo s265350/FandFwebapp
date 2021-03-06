@@ -6,9 +6,11 @@
 const express = require('express');
 require('dotenv').config();
 
+const fileupload = require('express-fileupload');
 const fs = require('fs');
 const { createCanvas, loadImage } = require('canvas');
 
+const dao = require('./dao.js');
 const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
@@ -16,7 +18,7 @@ const main = express();
 const port = process.env.MAINPORT || '3999';
 
 /* Process body content */
-main.use(express.json());
+main.use(express.json(),fileupload());
 
 /* Routes Definitions */
 main.use(express.static('public'));
@@ -63,18 +65,15 @@ main.post('/faces/profiles', [], (req, res) => {
 // POST upload a screenshot
 // Request body: BASE64 image to save
 main.post('/screenshot', [], async (req, res) => {
-  if(!req.body.imageBase64) res.status(400).end();
+  if(!req.body.imageBase64) return res.status(400).end();
   const image = await loadImage(req.body.imageBase64);
   const results = await facerecognition.identifyMultiple(image);
-  console.log("CAZZO1");
   if(!results || results.length <= 0){
     res.writeHead(200, {'Content-Type': 'application/json'});
     res.end(JSON.stringify({ status: 'success', profileIds: []}));
   }
-  console.log("CAZZO2");
   const {profileIds, recents} = await evaluateResults(results, req.body.recentFaces);
   console.log("profileIds: ", profileIds);
-  console.log("CAZZO3");
   res.writeHead(200, {'Content-Type': 'application/json'});
   res.end(JSON.stringify({ status: 'success', profileIds: profileIds, recentFaces: recents}));
 });
