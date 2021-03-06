@@ -9,6 +9,7 @@ const fetch = require("node-fetch");
 
 const fileupload = require('express-fileupload');
 const fs = require('fs');
+const FormData = require('form-data');
 
 const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -167,8 +168,13 @@ web.post('/faces/profiles', [], (req, res) => {
 // Request body: BASE64 image to save
 web.post('/screenshot', [], async (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
+  console.log("web ", formData);
+  const formData = new FormData();
+  formData.append("imageBase64", req.body.imageBase64);
+  formData.append("recentFaces", req.body.recentFaces);
+  //console.log("web ", formData.recentFaces);
   return new Promise( (resolve, reject) => {
-    fetch(`${requestAddress}/screenshot`, {method: 'POST', body: req.body})
+    fetch(`${requestAddress}/screenshot`, {method: 'POST', body: req.body.recentFaces})
     .then( (response) => {
         if(response.ok) {
             resolve(response.json());
@@ -178,7 +184,8 @@ web.post('/screenshot', [], async (req, res) => {
                 .then( (obj) => {reject(obj);} ) // error msg in the response body
                 .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
         }
-    }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    })
+    .catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
   });
 });
 
@@ -311,9 +318,12 @@ web.delete(`/strangers/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-exports.activateServer = function (address){
+exports.activateServer = async function (address){
+  console.time(`...WEB server started in`);
   requestAddress = address;
-  web.listen(port, async () => {
-    console.log(`Listening to requests on http://localhost:${port}`);
-  });
+  web.listen(port, () => {console.timeEnd(`...WEB server started in`);});
+  return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
+
+// Handling Promise Rejection Warning
+process.on('unhandledRejection', error => {console.log('WEB unhandled Rejection', error.test);});

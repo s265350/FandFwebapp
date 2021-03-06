@@ -170,8 +170,10 @@ exports.getStrangerById = function(profileId) {
 exports.generateId = async (length) => {
     // id must be a unique string of at least 6 random characters/numbers
     if (length < 6) length = 6;
-    const strangers = await this.getAllStrangersId();
-    const profiles = await this.getAllProfilesId();
+    const strangers = await this.getAllStrangersId()
+        .catch( (err) => JSON.stringify({errors: [{'param': 'Server', 'msg': err}],}) );
+    const profiles = await this.getAllProfilesId()
+        .catch( (err) => JSON.stringify({errors: [{'param': 'Server', 'msg': err}],}) );
     let id;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     while (!id || id == '' || profiles.includes(id) || strangers.includes(id)){

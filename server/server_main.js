@@ -15,6 +15,9 @@ const facerecognition = require('./face-recognition.js');
 const main = express();
 const port = process.env.MAINPORT || '3999';
 
+/* Process body content */
+web.use(express.json());
+
 /* Routes Definitions */
 main.use(express.static('public'));
 main.get('/', (req, res) => res.redirect('/index.html'));
@@ -27,7 +30,8 @@ main.post('/faces/profiles', [], (req, res) => {
   if(!req.body.profileId || !req.body.imageBase64) res.status(400).end();
   loadImage(req.body.imageBase64)
     .then( image => {
-      facerecognition.identifySingle(image).then(result => {
+      facerecognition.identifySingle(image)
+        .then(result => {
         if(!result) return undefined;
         let profileId;
         if(result.name != 'unknown' && !result.isStranger && req.body.profileId == result.name){
@@ -50,7 +54,8 @@ main.post('/faces/profiles', [], (req, res) => {
           res.writeHead(200, {'Content-Type': 'application/json'});
           res.end(JSON.stringify({ status: 'success', profileId: profileId}));
         }
-      });
+      })
+      ;
     })
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -58,7 +63,7 @@ main.post('/faces/profiles', [], (req, res) => {
 // POST upload a screenshot
 // Request body: BASE64 image to save
 main.post('/screenshot', [], async (req, res) => {
-  console.log("screenshot");
+  console.log("main ", req);return;
   if(!req.body.imageBase64) res.status(400).end();
   const image = await loadImage(req.body.imageBase64);
   const results = await facerecognition.identifyMultiple(image);
@@ -110,12 +115,17 @@ async function evaluateResults(results, recentFaces){
 
 /* Server Activation */
 exports.activateServer = async function () {
-  let address = `${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
-  main.listen(port, async () => {
-    console.log(`Loading models...`);
-    await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
-    await facerecognition.updateFaceMatcher(false).then(facerecognition.updateFaceMatcher(true));
-    console.log(`Ready for requests on http://localhost:${port}`);
-  });
-  return address;
+  console.time(`...MAIN server started in`);
+  console.time(`Models loaded in`);
+  await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
+  console.timeEnd(`Models loaded in`);
+  console.time(`Face Matchers computed in`);
+  await facerecognition.updateFaceMatcher(false);
+  await facerecognition.updateFaceMatcher(true);
+  console.timeEnd(`Face Matchers computed in`);
+  main.listen(port, async () => {console.timeEnd(`...MAIN server started in`);});
+  return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
+
+// Handling Promise Rejection Warning
+process.on('unhandledRejection', error => {console.log('MAIN unhandled Rejection', error);});

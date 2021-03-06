@@ -36,30 +36,28 @@ function getStream(){
             .catch((error) => {console.error('Video stream error: ', error)});
 }
 
-document.getElementById('video').addEventListener('play', () => {
-    recordingVideo(true);
-});
+document.getElementById('video').addEventListener('play', () => {startRecording();});
 
-document.getElementById('video').addEventListener('suspend', () => {
-    recordingVideo(true);
-});
+document.getElementById('video').addEventListener('suspend', () => {stopRecording();});
 
-document.getElementById('video').addEventListener('pause', () => {
-    recordingVideo(true);
-});
+document.getElementById('video').addEventListener('pause', () => {stopRecording();});
 
-function recordingVideo(listenerCall){
-    if((listenerCall)? !document.getElementById('video').paused : document.getElementById('video').paused){
-        console.log("startRecording");
-        document.getElementById('video').play();
-        clearRecentsInterval = setInterval( () => recentFaces.length = 0, 30000);
-        detectionInterval = setInterval( () => takeScreenshot(), 3000);
-    } else {
-        console.log("stopRecording");
-        clearInterval(clearRecentsInterval);
-        clearInterval(detectionInterval);
-        document.getElementById('video').pause();
-    }
+function startRecording(){
+    if(clearRecentsInterval != null || detectionInterval != null)return;
+    console.log("startRecording");
+    clearRecentsInterval = setInterval( () => recentFaces.length = 0, 30000);
+    detectionInterval = setInterval( () => takeScreenshot(), 3000);
+    document.getElementById('video').play();
+}
+
+function stopRecording(){
+    if(clearRecentsInterval == null && detectionInterval == null)return;
+    console.log("stopRecording");
+    clearInterval(clearRecentsInterval);
+    clearRecentsInterval = null;
+    clearInterval(detectionInterval);
+    detectionInterval = null;
+    document.getElementById('video').pause();
 }
 
 async function takeScreenshot(){
@@ -67,8 +65,8 @@ async function takeScreenshot(){
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
-    const base64 = canvas.toDataURL('image/png');
-    const {profileIds, recents} = await Api.uploadImage(base64, recentFaces);
+    const imageBase64 = canvas.toDataURL('image/png');
+    const {profileIds, recents} = await Api.uploadImage(imageBase64, recentFaces);
     recentFaces = recents;
     // for now notifications are sent only to the admin (because is the only one that "logs in")
     await Api.getAllProfiles().then(profiles => profiles.forEach(p => {if (p.system === 'Admin'){
@@ -82,4 +80,4 @@ async function takeScreenshot(){
     }}));
 }
 
-export {setup, takeScreenshot, recordingVideo};
+export {setup, takeScreenshot, startRecording, stopRecording};

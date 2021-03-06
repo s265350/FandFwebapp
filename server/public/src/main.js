@@ -53,9 +53,9 @@ function loadHome(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideHome').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.recordingVideo();
+    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.remove('video');
-    document.getElementById('video').addEventListener('click', () => {Video.recordingVideo();});
+    document.getElementById('video').addEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     //document.getElementById('video').addEventListener('click', () => {Video.takeScreenshot()});
     // clear page content
     document.getElementById('content').innerHTML = '';
@@ -66,9 +66,9 @@ async function loadRecognize(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideRecognize').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.recordingVideo();
+    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
-    document.getElementById('video').removeEventListener('click', () => {Video.recordingVideo();});
+    document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});
     // clear page content
     const content = document.getElementById('content');content.innerHTML = '';
@@ -93,9 +93,9 @@ async function loadProfile(){
     // if login is available this will change
     const loggedProfile = await Api.getAdminProfile('Admin');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.recordingVideo();
+    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
-    document.getElementById('video').removeEventListener('click', () => {Video.recordingVideo();});
+    document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});
     // clear page content
     const content = document.getElementById('content');content.innerHTML = '';
@@ -126,9 +126,9 @@ async function loadAboutUs(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideAboutUs').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.recordingVideo();
+    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
-    document.getElementById('video').removeEventListener('click', () => {Video.recordingVideo();});
+    document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});
     // clear page content
     const content = document.getElementById('content');content.innerHTML = '';
