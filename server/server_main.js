@@ -63,16 +63,18 @@ main.post('/faces/profiles', [], (req, res) => {
 // POST upload a screenshot
 // Request body: BASE64 image to save
 main.post('/screenshot', [], async (req, res) => {
-  console.log("main ", req);return;
   if(!req.body.imageBase64) res.status(400).end();
   const image = await loadImage(req.body.imageBase64);
   const results = await facerecognition.identifyMultiple(image);
-  if(!results && results.length <= 0){
+  console.log("CAZZO1");
+  if(!results || results.length <= 0){
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', profileIds: undefined}));
+    res.end(JSON.stringify({ status: 'success', profileIds: []}));
   }
+  console.log("CAZZO2");
   const {profileIds, recents} = await evaluateResults(results, req.body.recentFaces);
   console.log("profileIds: ", profileIds);
+  console.log("CAZZO3");
   res.writeHead(200, {'Content-Type': 'application/json'});
   res.end(JSON.stringify({ status: 'success', profileIds: profileIds, recentFaces: recents}));
 });

@@ -168,13 +168,8 @@ web.post('/faces/profiles', [], (req, res) => {
 // Request body: BASE64 image to save
 web.post('/screenshot', [], async (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
-  console.log("web ", formData);
-  const formData = new FormData();
-  formData.append("imageBase64", req.body.imageBase64);
-  formData.append("recentFaces", req.body.recentFaces);
-  //console.log("web ", formData.recentFaces);
   return new Promise( (resolve, reject) => {
-    fetch(`${requestAddress}/screenshot`, {method: 'POST', body: req.body.recentFaces})
+    fetch(`${requestAddress}/screenshot`, {method: 'POST', body: req.body})
     .then( (response) => {
         if(response.ok) {
             resolve(response.json());
