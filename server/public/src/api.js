@@ -163,10 +163,10 @@ async function changeProfileImage(profileId, imageBase64){
 }
 
 // upload an image
-async function uploadImage(imageBase64, recentFaces){
+async function uploadImage(imageBase64, recents){
     const formData = new FormData();
     formData.append("imageBase64", imageBase64);
-    formData.append("recentFaces", recentFaces);
+    formData.append("recents", recents);
     console.log("uploading image");
     return new Promise( (resolve, reject) => {
         fetch(`/screenshot`, {method: 'POST', body: formData})

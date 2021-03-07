@@ -5,11 +5,10 @@
 /* Required External Modules */
 const express = require('express');
 require('dotenv').config();
-const fetch = require("node-fetch");
 
 const fileupload = require('express-fileupload');
 const fs = require('fs');
-const FormData = require('form-data');
+const { createCanvas, loadImage } = require('canvas');
 
 const mandrill = require('node-mandrill')(process.env.MANDRILL_API_KEY);
 const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -19,7 +18,7 @@ const dao = require('./dao.js');
 /* App Variables */
 const web = express();
 const port = process.env.WEBPORT || '4000';
-let requestAddress;
+let recents = [];
 
 /* Process body content */
 web.use(express.json(),fileupload());
@@ -147,20 +146,14 @@ web.post('/strangers', [], (req, res) => {
 
 // POST upload a new image in 'faces' folder
 // Request body: image FILE to upload and the profileId
-web.post('/faces/profiles', [], (req, res) => {
+web.post('/faces/profiles', [], async (req, res) => {
   if(!req.body.profileId || !req.body.imageBase64) res.status(400).end();
-  return new Promise( (resolve, reject) => {
-    fetch(`${requestAddress}/faces/profiles`, {method: 'POST', body: req.body})
-    .then( (response) => {
-        if(response.ok) {
-            resolve(response.json());
-        }
-        else {
-            response.json()
-                .then( (obj) => {reject(obj);} ) // error msg in the response body
-                .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
-        }
-    }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+  const image = await loadImage(req.body.imageBase64);
+  const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
+  canvas.getContext('2d').drawImage(image, 0, 0);
+  const buffer = canvas.toBuffer('image/png');
+  fs.writeFileSync(`${__dirname}/faces/${req.body.profileId}.png`, buffer, (err) => {
+    if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
 });
 
@@ -168,20 +161,17 @@ web.post('/faces/profiles', [], (req, res) => {
 // Request body: BASE64 image to save
 web.post('/screenshot', [], async (req, res) => {
   if(!req.body.imageBase64) res.status(400).end();
-  return new Promise( (resolve, reject) => {
-    fetch(`${requestAddress}/screenshot`, {method: 'POST', body: req.body})
-    .then( (response) => {
-        if(response.ok) {
-            resolve(response.json());
-        }
-        else {
-            response.json()
-                .then( (obj) => {reject(obj);} ) // error msg in the response body
-                .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
-        }
-    })
-    .catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+  this.setRecents(req.body.recents);
+  const image = await loadImage(req.body.imageBase64);
+  const profileId = await dao.generateId(10);
+  const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
+  canvas.getContext('2d').drawImage(image, 0, 0);
+  const buffer = canvas.toBuffer('image/png');
+  fs.writeFileSync(`${__dirname}/faces/${profileId}.png`, buffer, (err) => {
+    if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', recents: recents}));
 });
 
 // POST move an image from a folder to another one
@@ -313,12 +303,17 @@ web.delete(`/strangers/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-exports.activateServer = async function (address){
-  console.time(`...WEB server started in`);
-  requestAddress = address;
-  web.listen(port, () => {console.timeEnd(`...WEB server started in`);});
+exports.activateServer = async function() {
+  //console.time(`...WEB server started in`);
+  web.listen(port, () => {
+    //console.timeEnd(`...WEB server started in`);
+  });
   return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
 
+exports.setRecents = function(lasts) {recents = lasts;}
+
+exports.getRecents = function() {return recents;}
+
 // Handling Promise Rejection Warning
-process.on('unhandledRejection', error => {console.log('WEB unhandled Rejection', error.test);});
+process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Web Server', 'msg': err}]});} );

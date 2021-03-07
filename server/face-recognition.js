@@ -25,10 +25,10 @@ exports.updateFaceMatcher = async (stranger) => {
     // label images
     const folder = (stranger)? "strangers" : "profiles";
     const labeledFaceDescriptors = await getlabeledFaceDescriptors(`${__dirname}/faces/${folder}`);
-    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0){console.log(`...${folder} Face Matcher is empty`);return undefined;}
+    if(!labeledFaceDescriptors || labeledFaceDescriptors.length <= 0){console.log(`${folder} Face Matcher is empty`);return undefined;}
     if(stranger) faceMatcherStrangers = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
     else faceMatcherProfiles = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
-    console.log(`...${folder} Face Matcher is up to date`);
+    console.log(`${folder} Face Matcher is up to date`);
 }
 
 async function getlabeledFaceDescriptors(folder) {

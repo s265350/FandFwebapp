@@ -170,10 +170,8 @@ exports.getStrangerById = function(profileId) {
 exports.generateId = async (length) => {
     // id must be a unique string of at least 6 random characters/numbers
     if (length < 6) length = 6;
-    const strangers = await this.getAllStrangersId()
-        .catch( (err) => JSON.stringify({errors: [{'param': 'Server', 'msg': err}],}) );
-    const profiles = await this.getAllProfilesId()
-        .catch( (err) => JSON.stringify({errors: [{'param': 'Server', 'msg': err}],}) );
+    const strangers = await this.getAllStrangersId();
+    const profiles = await this.getAllProfilesId();
     let id;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     while (!id || id == '' || profiles.includes(id) || strangers.includes(id)){
@@ -187,12 +185,13 @@ exports.generateId = async (length) => {
 exports.createProfile = function(profile) {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO profiles (profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar) VALUES(?,?,?,?,?,?,?,?,?,?,?)';
-        this.generateId(6).then( profileId => {
-            db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
-                if (err) reject(err);
-                resolve(profileId);
-            })
-            .catch( (err) => {reject(err);return;});
+        this.generateId(6)
+            .then( profileId => {
+                db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
+                    if (err) reject(err);
+                    resolve(profileId);
+                })
+                .catch( (err) => {reject(err);return;});
         });
     });
 };
@@ -212,13 +211,14 @@ exports.createProfileStatistics = function(profileStatistics) {
 exports.createStranger = function() {
     return new Promise((resolve, reject) => {
         const sql = 'INSERT INTO strangers (profileId, detections, avatar) VALUES(?,?,?)';
-        this.generateId(8).then(profileId => {
-            db.run(sql, [profileId, 1, profileId+"png"], function (err) {
-                if (err) reject(err);
-                resolve(profileId);
-            });
-        })
-        .catch( (err) => {reject(err);return;});
+        this.generateId(8)
+            .then(profileId => {
+                db.run(sql, [profileId, 1, profileId+"png"], function (err) {
+                    if (err) reject(err);
+                    resolve(profileId);
+                });
+            })
+            .catch( (err) => {reject(err);return;});
     });
 };
 

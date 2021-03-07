@@ -7,7 +7,7 @@ import * as Main from './main.js';
 
 let detectionInterval;
 let clearRecentsInterval;
-let recentFaces = [];
+let recents = [];
 
 async function setup(){
     // the user is free to choose any video input attached to the device
@@ -45,7 +45,7 @@ document.getElementById('video').addEventListener('pause', () => {stopRecording(
 function startRecording(){
     if(clearRecentsInterval != null || detectionInterval != null)return;
     console.log("startRecording");
-    clearRecentsInterval = setInterval( () => recentFaces.length = 0, 30000);
+    clearRecentsInterval = setInterval( () => recents.length = 0, 30000);
     detectionInterval = setInterval( () => takeScreenshot(), 3000);
     document.getElementById('video').play();
 }
@@ -66,10 +66,11 @@ async function takeScreenshot(){
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
     const imageBase64 = canvas.toDataURL('image/png');
-    const {profileIds, recents} = await Api.uploadImage(imageBase64, recentFaces);
-    recentFaces = recents;
+    const {profileIds, lasts} = await Api.uploadImage(imageBase64, recents);
+    recents = lasts;
     // for now notifications are sent only to the admin (because is the only one that "logs in")
-    await Api.getAllProfiles().then(profiles => profiles.forEach(p => {if (p.system === 'Admin'){
+    const profiles = await Api.getAllProfiles();
+    profiles.forEach(p => {if (p.system === 'Admin'){
         profileIds.forEach( (id, stranger) => {
             if(stranger) {
                 if(p.notifications) Main.pushNotification(imageBase64);
@@ -77,7 +78,7 @@ async function takeScreenshot(){
                 //if(p.notificationsPhone) await Main.smsNotification(imageBase64); // must be activated inserting credentials in the .env file
             }
         });
-    }}));
+    }});
 }
 
 export {setup, takeScreenshot, startRecording, stopRecording};
