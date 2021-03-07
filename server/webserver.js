@@ -1,4 +1,5 @@
 /* SERVER for the client to connect with */
+/* here push notifications are haldled */
 
 'use strict';
 
@@ -18,6 +19,7 @@ const dao = require('./dao.js');
 /* App Variables */
 const web = express();
 const port = process.env.WEBPORT || '4000';
+let clients = [];
 let recents = [];
 
 /* Process body content */
@@ -26,6 +28,25 @@ web.use(express.json(),fileupload());
 /* Routes Definitions */
 web.use(express.static('public'));
 web.get('/', (req, res) => res.redirect('/index.html'));
+web.get('/notifications', (req, res) => {
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache'
+  };
+  res.writeHead(200, headers);
+  // Generate an id based on timestamp and save res
+  const clientId = Date.now();
+  // sending the clientId and telling the client to retry every 10 seconds if connectivity is lost
+  res.write('event: id\ndata: ${clientId}\n\nretry: 10000\n');
+  clients.push({ clientId: clientId, res });
+  // When client closes connection we update the clients list avoiding sendi notifications to the disconnected ones
+  req.on('close', () => {
+    clients = clients.filter(c => c.clientId !== clientId);
+    recents = recents.filter(c => c.clientId !== clientId);
+    res.end();
+  });
+});
 
 /* App Configuration */
 // GET all profiles rows as Profile objects
@@ -155,23 +176,24 @@ web.post('/faces/profiles', [], async (req, res) => {
   fs.writeFileSync(`${__dirname}/faces/${req.body.profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
+  res.status(200).end();
 });
 
 // POST upload a screenshot
 // Request body: BASE64 image to save
 web.post('/screenshot', [], async (req, res) => {
-  if(!req.body.imageBase64) res.status(400).end();
-  this.setRecents(req.body.recents);
+  if(!req.body.clientId || !req.body.imageBase64) res.status(400).end();
+  recents = recents.filter(r => r.clientId !== req.body.clientId);
+  recents.push({clientId: req.body.clientId, recents: req.body.recents});
   const image = await loadImage(req.body.imageBase64);
   const profileId = await dao.generateId(10);
   const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
   canvas.getContext('2d').drawImage(image, 0, 0);
   const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(`${__dirname}/faces/${profileId}.png`, buffer, (err) => {
+  fs.writeFileSync(`${__dirname}/faces/_${req.body.clientId}_${profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
-  res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({ status: 'success', recents: recents}));
+  res.status(200).end();
 });
 
 // POST move an image from a folder to another one
@@ -197,8 +219,8 @@ web.post('/faces/:folder', [], (req, res) => {
 // Request parameters: 
 // Request body: email address, name, subject, message
 web.post('/sendemail', function(req, res){
-  if(!req.body.email || !req.body.name || !req.body.subject || !req.body.message || !req.body.imageBase64) res.status(400).end();
-  // eventual spam protection or checks.
+  if(!req.body.email || !req.body.name || !req.body.subject || !req.body.message) res.status(400).end();
+  // eventual spam protection or checks
   mandrill('/messages/send', {
     message: {
         to: [{email: req.body.email , name: req.body.name}],
@@ -206,31 +228,21 @@ web.post('/sendemail', function(req, res){
         from_name: process.env.COMPANY_NAME,
         subject: req.body.subject,
         text: req.body.message,
-        important: true,
-        images: [{type: 'image/png' , name: 'unknown', content: req.body.imageBase64}]
+        important: true
     }
   }, function(error){if (error) console.log( JSON.stringify(error) );});
 });
 
 // POST sms
 // Request parameters: 
-// Request body: phone number, message, (optional) image
+// Request body: phone number, message
 web.post('/sendsms', function(req, res){
   if(!req.body.phone || !req.body.message) res.status(400).end();
-  // if an image is passed send MMS else send SMS
-  if(req.body.imageBase64)
-    twilio.messages.create({
-      body: req.body.message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      mediaUrl: req.body.imageBase64,
-      to: req.body.phone
-    });
-  else
-    twilio.messages.create({
-      body: req.body.message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: req.body.phone
-    });
+  twilio.messages.create({
+    body: req.body.message,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: req.body.phone
+  });
 });
 
 // PUT update a profile row
@@ -311,9 +323,9 @@ exports.activateServer = async function() {
   return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
 
-exports.setRecents = function(lasts) {recents = lasts;}
+exports.notification = function(clientId, stranger, recents) {clients.forEach(c => {if(c.clientId == clientId) c.res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, lasts: recents})}\n\n)retry: 10000\n`)});}
 
-exports.getRecents = function() {return recents;}
+exports.getRecents = function(clientId) {return recents.filter(r => r.clientId == clientId);}
 
 // Handling Promise Rejection Warning
 process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Web Server', 'msg': err}]});} );

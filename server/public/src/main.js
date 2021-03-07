@@ -3,7 +3,7 @@ import * as Video from './video.js';
 import * as Recognize from './page_recognize.js';
 import * as Profile from './page_profile.js';
 
-let loggedProfile;
+let clientId;
 
 window.addEventListener('load', () => {
     // sidebar listeners
@@ -11,41 +11,43 @@ window.addEventListener('load', () => {
     document.getElementById('sideRecognize').addEventListener('click', () => {loadRecognize();});
     document.getElementById('sideProfile').addEventListener('click', () => {loadProfile();});
     document.getElementById('sideAboutUs').addEventListener('click', () => {loadAboutUs();});
-    /* LOGIN it would complicate the code and it's not mandatory for the system to work */
+    /* LOGIN would complicate the code and it's not mandatory for the system to work at now */
     // init page
     Video.setup();
     loadHome();
+    // create an event source to receive messages from server
+    const eventSource = new EventSource("/notifications");
+    // Handler for assigning clientId
+    eventSource.addEventListener('id', (e) => {clientId = e.data;});
+    // Handler for events of type 'strangerNotification' only
+    eventSource.addEventListener('strangerNotification', (e) => {
+        Video.setRecents(e.data.recents);
+        if(!e.data.stranger)return;
+        await Api.getAllProfiles().forEach(p => { 
+            if(p.system === 'Admin') {// for now notifications are sent only to the admin (because is the only one that "logs in")
+                if(p.notifications) pushNotification();
+                if(p.notificationsPhone) Api.sendSmsNotification(p.phone);
+                if(p.notificationsEmail) Api.sendEmailNotification(p.firstName, p.email);
+            }
+        });
+    });
     // Check if the browser supports notifications and ask the user for permission
-    if (!("Notification" in window)) alert("This browser does not support desktop notification");
+    if(!("Notification" in window)) alert("This browser does not support desktop notification");
     else if (Notification.permission !== "denied") Notification.requestPermission();
 });
 
-function pushNotification(imageBase64){
+function getClientId() {return clientId;}
+
+function pushNotification() {
     const subject = `F&F System alert`;
-    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
-    if (Notification.permission === 'granted'){
+    if(Notification.permission === 'granted') {
         const notification = new Notification(subject, {
-            body: "Don't worry! An image of his face was saved",
+            body: "Stranger detected!",
             icon: "../svg/logo.png",
-            badge: "../svg/logo.png",
-            image: imageBase64
+            badge: "../svg/logo.png"
         });
         notification.onclick = function() {loadRecognize();};
     }
-}
-
-async function emailNotification(imageBase64){
-    // for this is necessary to create an .env file and insert the credentials for Mandrill
-    const subject = `F&F System alert`;
-    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
-    await Api.sendEmailNotification(loggedProfile.email, loggedProfile.firstName, subject, message, imageBase64);
-}
-
-async function smsNotification(imageBase64){
-    // for this is necessary to create an .env file and insert the credentials for Mandrill
-    const subject = `F&F System alert`;
-    const message = `The F&F Recognition system has detected a stranger in your house! You should check now on the web app as soon as possible! Meanwhile here is an image of him/her: `;
-    await Api.sendSmsNotification(loggedProfile.phone, loggedProfile.firstName, subject, message, imageBase64);
 }
 
 function loadHome(){
@@ -157,4 +159,4 @@ async function loadAboutUs(){
     div.appendChild(element);
 }
 
-export {loadRecognize, loadProfile, pushNotification, emailNotification, smsNotification};
+export {loadRecognize, loadProfile, getClientId};

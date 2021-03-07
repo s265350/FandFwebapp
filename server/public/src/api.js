@@ -3,6 +3,7 @@
 import Profile from "./profile.js";
 import ProfileStatistics from "./profilestatistics.js";
 import Stranger from "./stranger.js";
+import {getClientId} from "./main.js";
 
 /* GET */
 
@@ -147,6 +148,7 @@ async function createProfileStatistics(profileStatistics) {
 // upload the new image for the given profileId
 async function changeProfileImage(profileId, imageBase64){
     const formData = new FormData();
+    formData.append('clientId', getClientId());
     formData.append('profileId', profileId);
     formData.append('imageBase64', imageBase64);
     return new Promise( (resolve, reject) => {
@@ -165,6 +167,7 @@ async function changeProfileImage(profileId, imageBase64){
 // upload an image
 async function uploadImage(imageBase64, recents){
     const formData = new FormData();
+    formData.append('clientId', getClientId());
     formData.append("imageBase64", imageBase64);
     formData.append("recents", recents);
     console.log("uploading image");
@@ -182,15 +185,13 @@ async function uploadImage(imageBase64, recents){
         }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
     });
 }
-
 // send an email notification
-async function sendEmailNotification(email, name, subject, message, imageBase64){
+async function sendEmailNotification(email, name){
     const formData = new FormData();
     formData.append("email", email);
     formData.append("name", name);
-    formData.append("subject", subject);
-    formData.append("message", message);
-    formData.append("imageBase64", imageBase64);
+    formData.append("subject", `F&F System alert`);
+    formData.append("message", "Stranger detected!");
     return new Promise( (resolve, reject) => {
         fetch(`/sendemail`, {method: 'POST', body: formData})
         .then( (response) => {
@@ -205,11 +206,10 @@ async function sendEmailNotification(email, name, subject, message, imageBase64)
 }
 
 // send an SMS notification
-async function sendSmsNotification(number, message, imageBase64){
+async function sendSmsNotification(number){
     const formData = new FormData();
     formData.append("number", number);
-    formData.append("message", message);
-    if(imageBase64)formData.append("imageBase64", imageBase64);
+    formData.append("message", `F&F System alert\nStranger detected!`);
     return new Promise( (resolve, reject) => {
         fetch(`/sendemail`, {method: 'POST', body: formData})
         .then( (response) => {
@@ -326,9 +326,9 @@ export {
     createProfile, 
     createProfileStatistics, 
     changeProfileImage, 
-    uploadImage,  
-    sendEmailNotification, 
+    uploadImage, 
     sendSmsNotification, 
+    sendEmailNotification, 
     updateProfile, 
     updateProfileStatistics, 
     deleteImage, 

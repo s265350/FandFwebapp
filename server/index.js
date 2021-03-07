@@ -1,4 +1,5 @@
-/* MAIN SERVER which performs images computation */
+/* MAIN SERVER */
+/* here image operations are performed */
 
 'use strict';
 
@@ -9,58 +10,49 @@ const fs = require('fs');
 const chokidar = require('chokidar');
 const { createCanvas, loadImage } = require('canvas');
 
-const webserver = require('./server_web.js');
+const webserver = require('./webserver.js');
 const dao = require('./dao.js');
 const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
 const app = express();
 
-/* Initialize */
+/* App Configuration */
 activateServers();
 const watcherOptions = {depth: 0, awaitWriteFinish: true};
 const watcherFaces = chokidar.watch('./faces/**/*.png', watcherOptions);
+watcherFaces.on('add', path => newImage(path));
 const watcherProfiles = chokidar.watch('./faces/profiles/**/*.png', watcherOptions);
-
-/* App Configuration */
-watcherFaces
-  .on('add', path => newImage(path))
-  .on('unlink', path => console.log(`File ${path} has been removed`));
-
-watcherProfiles
-  .on('add', path => newProfileImage(path))
-  .on('unlink', path => console.log(`File ${path} has been removed`));
+watcherProfiles.on('add', path => newProfileImage(path));
 
 // called when a new image is added to 'faces' folder
 async function newImage(path) {
-  console.log(`new image: ${path}`);
-  let profileIds;
-  let recents = webserver.getRecents();
+  const clientId = path.split('_')[1];
+  let stranger = false;
+  let recents = webserver.getRecents(clientId);
   if(!recents) recents = [];
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
   results.forEach(async (result) => {
     if(result.name == 'unknown'){
-      console.log('unknown');
+      stranger = true;
       await unknown(result, image);
     } else if((result.isStranger && (!recents || (recents && !recents.includes(result.name))))){
-      console.log('known stranger');
+      stranger = true;
       if(recents && recents?.length > 4) recents.pop();
       recents.push(result.name);
       await stranger(result);
     } else if(!recents || (recents && !recents.includes(result.name))){
-      console.log('known profile');
       if(recents && recents?.length > 4) recents.pop();
       recents.push(result.name);
       await known(result);
     }
-    profileIds.push({profileId: result.name, stranger: result.isStranger});
     fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
   });
-  webserver.setRecents(recents);
+  webserver.notification(clientId, stranger, recents);
 }
 
-async function unknown(result, image){
+async function unknown(result, image) {
   result.name = await dao.createStranger();
   const newPath = `${__dirname}/faces/strangers/${result.name}.png`;
   const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
@@ -70,14 +62,14 @@ async function unknown(result, image){
   await facerecognition.updateFaceMatcher(true);
 }
 
-async function stranger(result){
+async function stranger(result) {
   const stranger = await dao.getStrangerById(result.name);
   console.log(stranger);
   stranger.detections++;
   await dao.updateStranger(stranger);
 }
 
-async function known(result){
+async function known(result) {
   const profileStatistics = await dao.getProfileStatisticsById(result.name);
   profileStatistics.faces++;
   await dao.updateProfileStatistics(profileStatistics);
@@ -120,12 +112,9 @@ async function newProfileImage(path) {
 /* Server Activation */
 async function activateServers() {
   console.time(`...Servers started in`);
-  //console.time(`Models loaded in`);
-  await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
-  //console.timeEnd(`Models loaded in`);
-  //console.time(`Face Matchers computed in`);
-  await facerecognition.updateFaceMatcher(false).then(facerecognition.updateFaceMatcher(true));
-  //console.timeEnd(`Face Matchers computed in`);
+  //console.time(`Models loaded and Face Matchers computed in`);
+  await facerecognition.loadModels(__dirname+process.env.MODELS_URL).then(facerecognition.updateFaceMatcher(false)).then(facerecognition.updateFaceMatcher(true));
+  //console.timeEnd(`Models loaded and Face Matchers computed in`);
   const address = await webserver.activateServer();
   console.timeEnd(`...Servers started in`);
   console.log(`\nListening to requests on ${address} or http://localhost:${address.split(':')[address.split(':').length-1]}`);
