@@ -24,7 +24,7 @@ watcherFaces.on('add', path => newImage(path));
 const watcherProfiles = chokidar.watch('./faces/profiles/**/*.png', watcherOptions);
 watcherProfiles.on('add', path => newProfileImage(path));
 
-// called when a new image is added to 'faces' folder
+// called when a new image is added to the 'faces' folder
 async function newImage(path) {
   const clientId = path.split('_')[1];
   let stranger = false;
