@@ -31,7 +31,6 @@ async function newImage(path) {
   const recents = (webserver.getRecents(clientId))? webserver.getRecents(clientId) : [];
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
-  console.time("result computation took");
   if(results)
     results.forEach(async (result) => {
       if(result.name == 'unknown'){
@@ -50,7 +49,6 @@ async function newImage(path) {
         await profileResult(result);
       }
     });
-    console.timeEnd("result computation took");
   fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
   webserver.notification(clientId, stranger, recents);
 }

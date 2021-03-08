@@ -356,7 +356,7 @@ async function populateProfile(loggedProfile, profile){
                 notificationsEmail.classList.replace("text-primary", "text-secondary");
                 notificationsEmail.firstChild.classList.replace("fa-envelope", "fa-envelope-open");
             }
-            const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
+            const newProfile = new Profile('', profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             newProfile.profileId = profile.profileId;
             Api.updateProfile(newProfile);

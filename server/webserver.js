@@ -179,7 +179,7 @@ web.post('/faces/profiles', [], async (req, res) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
   res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+  res.end(JSON.stringify({ status: 'success', profileId: req.body.profileId}));
 });
 
 // POST upload a screenshot
@@ -214,7 +214,7 @@ web.post('/faces/:folder', [], (req, res) => {
   fs.unlink(oldPath, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+    res.end(JSON.stringify({ status: 'success', profileId: req.body.filename}));
   });
 });
 
@@ -235,7 +235,7 @@ web.post('/sendemail', function(req, res){
     }
   }, (error) => {if (error) console.log( JSON.stringify(error) );});
   res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+  res.end(JSON.stringify({ status: 'success', profileId: req.body.email}));
 });
 
 // POST sms
@@ -249,7 +249,7 @@ web.post('/sendsms', function(req, res){
     to: req.body.phone
   });
   res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+  res.end(JSON.stringify({ status: 'success', profileId: req.body.phone}));
 });
 
 // PUT update a profile row
@@ -260,7 +260,7 @@ web.put('/profiles/:profileId', (req, res) => {
   dao.updateProfile(req.body)
     .then( () => {
       res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
     })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -273,7 +273,7 @@ web.put('/statistics/:profileId', (req, res) => {
   dao.updateProfileStatistics(req.body)
     .then( () => {
       res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
     })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
@@ -281,12 +281,12 @@ web.put('/statistics/:profileId', (req, res) => {
 // PUT update a stranger row
 // Request parameters: profile ID
 // Request body: object describing a stranger { profileId*, detections }
-web.put('/statistics/:profileId', (req, res) => {
+web.put('/strangers/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateStranger(req.body)
     .then( () => {
       res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
     })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });

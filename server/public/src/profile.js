@@ -1,7 +1,7 @@
 'use strict';
 
 class Profile {
-    constructor(profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail){
+    constructor(profileId, firstName, lastName, phone, email, system, family, notifications, notificationsPhone, notificationsEmail, avatar){
         this.profileId = profileId; // profile id is set by the server, NOT at client side
         this.firstName = firstName;
         this.lastName = lastName;
@@ -12,7 +12,7 @@ class Profile {
         this.notifications = Number(notifications); // boolean converted in number for the database
         this.notificationsPhone = Number(notificationsPhone); // boolean converted in number for the database
         this.notificationsEmail = Number(notificationsEmail); // boolean converted in number for the database
-        this.avatar = profileId+".png"; // name of the profile avatar file
+        this.avatar = avatar; // name of the profile avatar file
     }
     static from (json) {
         // returns a Profile obj from a json one
