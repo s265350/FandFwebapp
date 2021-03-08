@@ -1,8 +1,8 @@
 /* Fetch API */
 
-import * as Profile from "./profile.js";
-import * as ProfileStatistics from "./profilestatistics.js";
-import * as Stranger from "./stranger.js";
+import Profile from "./profile.js";
+import ProfileStatistics from "./profilestatistics.js";
+import Stranger from "./stranger.js";
 import {getClientId} from "./main.js";
 
 /* GET */
@@ -165,11 +165,10 @@ async function changeProfileImage(profileId, imageBase64){
 }
 
 // upload an image
-async function uploadImage(imageBase64, recents){
+async function uploadImage(imageBase64){
     const formData = new FormData();
     formData.append('clientId', getClientId());
     formData.append("imageBase64", imageBase64);
-    formData.append("recents", recents);
     console.log("uploading image");
     return new Promise( (resolve, reject) => {
         fetch(`/screenshot`, {method: 'POST', body: formData})

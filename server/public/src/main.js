@@ -21,10 +21,8 @@ window.addEventListener('load', () => {
     eventSource.addEventListener('id', (e) => {clientId = e.data;});
     // Handler for events of type 'strangerNotification' only
     eventSource.addEventListener('strangerNotification', async (e) => {
-        console.log("received stranger", e.data.stranger);
-        console.log("received recents", e.data.recents);
-        Video.setRecents(e.data.recents);
-        if(!e.data.stranger)return;
+        const data = JSON.parse(e.data);
+        if(!data.stranger)return;
         await Api.getAllProfiles().forEach(p => { 
             if(p.system === 'Admin') {// for now notifications are sent only to the admin (because is the only one that "logs in")
                 if(p.notifications) pushNotification();
@@ -57,7 +55,6 @@ function loadHome(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideHome').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.remove('video');
     document.getElementById('video').addEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     //document.getElementById('video').addEventListener('click', () => {Video.takeScreenshot()});
@@ -70,7 +67,6 @@ async function loadRecognize(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideRecognize').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
     document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});
@@ -97,7 +93,6 @@ async function loadProfile(){
     // if login is available this will change
     const loggedProfile = await Api.getAdminProfile('Admin');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
     document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});
@@ -130,7 +125,6 @@ async function loadAboutUs(){
     document.querySelectorAll('.nav-link').forEach(a => {a.classList.remove('active');});
     document.getElementById('sideAboutUs').classList.add('active');
     // video css and listener
-    if(document.getElementById('videoSelector').value != 'None')Video.stopRecording();
     document.getElementById('videowrap').classList.add('video');
     document.getElementById('video').removeEventListener('click', () => {if(document.getElementById('video').paused){Video.startRecording();}else{Video.stopRecording();}});
     document.getElementById('video').addEventListener('click', () => {loadHome()});

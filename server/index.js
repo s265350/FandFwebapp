@@ -18,7 +18,6 @@ const facerecognition = require('./face-recognition.js');
 const app = express();
 
 /* App Configuration */
-activateServers();
 const watcherOptions = {depth: 0, awaitWriteFinish: true};
 const watcherFaces = chokidar.watch('./faces/**/*.png', watcherOptions);
 watcherFaces.on('add', path => newImage(path));
@@ -29,27 +28,29 @@ watcherProfiles.on('add', path => newProfileImage(path));
 async function newImage(path) {
   const clientId = path.split('_')[1];
   let stranger = false;
-  let recents = webserver.getRecents(clientId);
-  if(!recents) recents = [];
-  console.log("index-recents", recents);
+  const recents = (webserver.getRecents(clientId))? webserver.getRecents(clientId) : [];
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
+  console.log("index-startrecents", recents);
   results.forEach(async (result) => {
     if(result.name == 'unknown'){
       stranger = true;
       await unknownResult(result, image);
+      if(recents && recents?.length > 5) recents.pop();
+      recents.push(result.name);
     } else if((result.isStranger && (!recents || (recents && !recents.includes(result.name))))){
       stranger = true;
-      if(recents && recents?.length > 4) recents.pop();
+      if(recents && recents?.length > 5) recents.pop();
       recents.push(result.name);
       await strangerResult(result);
     } else if(!recents || (recents && !recents.includes(result.name))){
-      if(recents && recents?.length > 4) recents.pop();
+      if(recents && recents?.length > 5) recents.pop();
       recents.push(result.name);
       await profileResult(result);
     }
     fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
   });
+  console.log("index-endrecents", recents);
   webserver.notification(clientId, stranger, recents);
 }
 
@@ -110,7 +111,7 @@ async function newProfileImage(path) {
 }
 
 /* Server Activation */
-async function activateServers() {
+(async function activateServers() {
   console.time(`...Servers started in`);
   //console.time(`Models loaded and Face Matchers computed in`);
   await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
@@ -119,7 +120,7 @@ async function activateServers() {
   const address = await webserver.activateServer();
   console.timeEnd(`...Servers started in`);
   console.log(`\nListening to requests on ${address} or http://localhost:${address.split(':')[address.split(':').length-1]}`);
-}
+})();
 
 // Handling Promise Rejection Warning
 process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Main Server', 'msg': err}]});} );

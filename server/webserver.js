@@ -36,7 +36,9 @@ web.get('/notifications', (req, res) => {
   };
   res.writeHead(200, headers);
   // Generate an id based on timestamp and save res
-  const clientId = Date.now();
+  let tmpId = Date.now();
+  while(clients.map(c => c.clientId).includes(tmpId))tmpId = Date.now();
+  const clientId = tmpId;
   // sending the clientId and telling the client to retry every 10 seconds if connectivity is lost
   res.write(`event: id\ndata: ${clientId}\n\nretry: 10000\n`);
   clients.push({ clientId: clientId, res });
@@ -184,8 +186,6 @@ web.post('/faces/profiles', [], async (req, res) => {
 // Request body: BASE64 image to save
 web.post('/screenshot', [], async (req, res) => {
   if(!req.body.clientId || !req.body.imageBase64) res.status(400).end();
-  recents = recents.filter(r => r.clientId !== req.body.clientId);
-  recents.push({clientId: req.body.clientId, recents: req.body.recents});
   const image = await loadImage(req.body.imageBase64);
   const profileId = await dao.generateId(10);
   const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
@@ -349,9 +349,13 @@ exports.activateServer = async function() {
   return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
 
-exports.notification = function(clientId, stranger, recents) {clients.forEach(c => {if(c.clientId == clientId) c.res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, recents: recents})}\n\n)retry: 10000\n`)});}
+exports.notification = function(clientId, stranger, lasts) {
+  recents = recents.filter(r => r.clientId !== clientId);
+  recents.push({clientId: clientId, recents: lasts});
+  clients.filter(c => c.clientId == clientId)[0].res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, recents: lasts})}\n\n)retry: 10000\n`);
+}
 
-exports.getRecents = function(clientId) {return recents.filter(r => r.clientId == clientId);}
+exports.getRecents = function(clientId) {return recents.filter(r => r.clientId == clientId)[0]?.recents;}
 
 // Handling Promise Rejection Warning
 process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Web Server', 'msg': err}]});} );

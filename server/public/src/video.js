@@ -3,13 +3,10 @@
 'use strict';
 
 import * as Api from './api.js';
-import * as Main from './main.js';
 
 let detectionInterval;
-let clearRecentsInterval;
-let recents = [];
 
-async function setup(){
+async function setup() {
     // the user is free to choose any video input attached to the device
     // mediaDevices support check
     if (!!(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)) {alert('getUserMedia() is not supported by your browser');return;}
@@ -26,7 +23,7 @@ async function setup(){
     document.getElementById('video').addEventListener('mouseup', () => {document.getElementById('video').style.opacity = 1;});
 }
 
-function getStream(){
+function getStream() {
     if(window.stream) {window.stream.getTracks().forEach((track) => {track.stop();});}
     if(document.getElementById('videoSelector').value != 'None')
         navigator.mediaDevices.getUserMedia({video: {deviceId: { exact: document.getElementById('videoSelector').value },}})
@@ -42,33 +39,28 @@ document.getElementById('video').addEventListener('suspend', () => {stopRecordin
 
 document.getElementById('video').addEventListener('pause', () => {stopRecording();});
 
-function startRecording(){
-    if(clearRecentsInterval != null || detectionInterval != null)return;
-    console.log("startRecording");
-    clearRecentsInterval = setInterval( () => recents.length = 0, 60000);
+function startRecording() {
+    if(detectionInterval != null)return;
+    //console.log("startRecording");
     detectionInterval = setInterval( () => takeScreenshot(), 3000);
     document.getElementById('video').play();
 }
 
-function stopRecording(){
-    if(clearRecentsInterval == null && detectionInterval == null)return;
-    console.log("stopRecording");
-    clearInterval(clearRecentsInterval);
-    clearRecentsInterval = null;
+function stopRecording() {
+    if(detectionInterval == null)return;
+    //console.log("stopRecording");
     clearInterval(detectionInterval);
     detectionInterval = null;
     document.getElementById('video').pause();
 }
 
-async function takeScreenshot(){
+async function takeScreenshot() {
     const canvas = document.createElement('canvas');
     canvas.width = document.getElementById('video').videoWidth;
     canvas.height = document.getElementById('video').videoHeight;
     canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
     const imageBase64 = canvas.toDataURL('image/png');
-    await Api.uploadImage(imageBase64, recents);
+    await Api.uploadImage(imageBase64);
 }
 
-function setRecents(lasts){recents = lasts;}
-
-export {setup, takeScreenshot, startRecording, stopRecording, setRecents};
+export {setup, takeScreenshot, startRecording, stopRecording};
