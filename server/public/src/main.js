@@ -20,7 +20,9 @@ window.addEventListener('load', () => {
     // Handler for assigning clientId
     eventSource.addEventListener('id', (e) => {clientId = e.data;});
     // Handler for events of type 'strangerNotification' only
-    eventSource.addEventListener('strangerNotification', (e) => {
+    eventSource.addEventListener('strangerNotification', async (e) => {
+        console.log("received stranger", e.data.stranger);
+        console.log("received recents", e.data.recents);
         Video.setRecents(e.data.recents);
         if(!e.data.stranger)return;
         await Api.getAllProfiles().forEach(p => { 

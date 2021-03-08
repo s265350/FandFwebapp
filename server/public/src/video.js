@@ -3,6 +3,7 @@
 'use strict';
 
 import * as Api from './api.js';
+import * as Main from './main.js';
 
 let detectionInterval;
 let clearRecentsInterval;

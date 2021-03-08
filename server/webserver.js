@@ -38,7 +38,7 @@ web.get('/notifications', (req, res) => {
   // Generate an id based on timestamp and save res
   const clientId = Date.now();
   // sending the clientId and telling the client to retry every 10 seconds if connectivity is lost
-  res.write('event: id\ndata: ${clientId}\n\nretry: 10000\n');
+  res.write(`event: id\ndata: ${clientId}\n\nretry: 10000\n`);
   clients.push({ clientId: clientId, res });
   // When client closes connection we update the clients list avoiding sendi notifications to the disconnected ones
   req.on('close', () => {
@@ -176,7 +176,8 @@ web.post('/faces/profiles', [], async (req, res) => {
   fs.writeFileSync(`${__dirname}/faces/${req.body.profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
-  res.status(200).end();
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
 });
 
 // POST upload a screenshot
@@ -190,10 +191,11 @@ web.post('/screenshot', [], async (req, res) => {
   const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
   canvas.getContext('2d').drawImage(image, 0, 0);
   const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(`${__dirname}/faces/_${req.body.clientId}_${profileId}.png`, buffer, (err) => {
+  fs.writeFile(`${__dirname}/faces/_${req.body.clientId}_${profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
-  res.status(200).end();
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
 });
 
 // POST move an image from a folder to another one
@@ -211,7 +213,8 @@ web.post('/faces/:folder', [], (req, res) => {
   });
   fs.unlink(oldPath, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
-    res.status(200).end();
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ status: 'success', profileId: profileId}));
   });
 });
 
@@ -230,7 +233,9 @@ web.post('/sendemail', function(req, res){
         text: req.body.message,
         important: true
     }
-  }, function(error){if (error) console.log( JSON.stringify(error) );});
+  }, (error) => {if (error) console.log( JSON.stringify(error) );});
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
 });
 
 // POST sms
@@ -243,6 +248,8 @@ web.post('/sendsms', function(req, res){
     from: process.env.TWILIO_PHONE_NUMBER,
     to: req.body.phone
   });
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', profileId: profileId}));
 });
 
 // PUT update a profile row
@@ -251,7 +258,10 @@ web.post('/sendsms', function(req, res){
 web.put('/profiles/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateProfile(req.body)
-    .then( () => res.status(200).end() )
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+    })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -261,8 +271,11 @@ web.put('/profiles/:profileId', (req, res) => {
 web.put('/statistics/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateProfileStatistics(req.body)
-      .then( () => res.status(200).end() )
-      .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+    })
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // PUT update a stranger row
@@ -271,8 +284,11 @@ web.put('/statistics/:profileId', (req, res) => {
 web.put('/statistics/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateStranger(req.body)
-      .then( () => res.status(200).end() )
-      .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
+    })
+    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
 // DELETE delete an image in a folder
@@ -283,7 +299,8 @@ web.delete(`/faces/:filename`, (req, res) => {
   const path = (req.body.stranger)? "strangers" : "profiles";
   fs.unlink(`${__dirname}/faces/${path}/${req.params.filename}`, (err) => {
     if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
-    res.status(200).end();
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ status: 'success', profileId: req.params.filename}));
   });
 });
 
@@ -292,7 +309,10 @@ web.delete(`/faces/:filename`, (req, res) => {
 web.delete(`/profiles/:profileId`, (req, res) => {
   if(!req.params.profileId) res.status(400).end();
   dao.deleteProfile(req.params.profileId)
-    .then( () => res.status(200).end() )
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
+    })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -301,7 +321,10 @@ web.delete(`/profiles/:profileId`, (req, res) => {
 web.delete(`/statistics/:profileId`, (req, res) => {
   if(!req.params.profileId) res.status(400).end();
   dao.deleteProfileStatistics(req.params.profileId)
-    .then( () => res.status(200).end() )
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
+    })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -310,7 +333,10 @@ web.delete(`/statistics/:profileId`, (req, res) => {
 web.delete(`/strangers/:profileId`, (req, res) => {
   if(!req.params.profileId) res.status(400).end();
   dao.deleteStranger(req.params.profileId)
-    .then( () => res.status(200).end() )
+    .then( () => {
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
+    })
     .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
@@ -323,7 +349,7 @@ exports.activateServer = async function() {
   return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
 }
 
-exports.notification = function(clientId, stranger, recents) {clients.forEach(c => {if(c.clientId == clientId) c.res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, lasts: recents})}\n\n)retry: 10000\n`)});}
+exports.notification = function(clientId, stranger, recents) {clients.forEach(c => {if(c.clientId == clientId) c.res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, recents: recents})}\n\n)retry: 10000\n`)});}
 
 exports.getRecents = function(clientId) {return recents.filter(r => r.clientId == clientId);}
 

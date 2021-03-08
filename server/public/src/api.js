@@ -1,8 +1,8 @@
 /* Fetch API */
 
-import Profile from "./profile.js";
-import ProfileStatistics from "./profilestatistics.js";
-import Stranger from "./stranger.js";
+import * as Profile from "./profile.js";
+import * as ProfileStatistics from "./profilestatistics.js";
+import * as Stranger from "./stranger.js";
 import {getClientId} from "./main.js";
 
 /* GET */

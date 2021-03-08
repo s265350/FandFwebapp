@@ -31,28 +31,29 @@ async function newImage(path) {
   let stranger = false;
   let recents = webserver.getRecents(clientId);
   if(!recents) recents = [];
+  console.log("index-recents", recents);
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
   results.forEach(async (result) => {
     if(result.name == 'unknown'){
       stranger = true;
-      await unknown(result, image);
+      await unknownResult(result, image);
     } else if((result.isStranger && (!recents || (recents && !recents.includes(result.name))))){
       stranger = true;
       if(recents && recents?.length > 4) recents.pop();
       recents.push(result.name);
-      await stranger(result);
+      await strangerResult(result);
     } else if(!recents || (recents && !recents.includes(result.name))){
       if(recents && recents?.length > 4) recents.pop();
       recents.push(result.name);
-      await known(result);
+      await profileResult(result);
     }
     fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
   });
   webserver.notification(clientId, stranger, recents);
 }
 
-async function unknown(result, image) {
+async function unknownResult(result, image) {
   result.name = await dao.createStranger();
   const newPath = `${__dirname}/faces/strangers/${result.name}.png`;
   const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
@@ -62,14 +63,14 @@ async function unknown(result, image) {
   await facerecognition.updateFaceMatcher(true);
 }
 
-async function stranger(result) {
+async function strangerResult(result) {
   const stranger = await dao.getStrangerById(result.name);
   console.log(stranger);
   stranger.detections++;
   await dao.updateStranger(stranger);
 }
 
-async function known(result) {
+async function profileResult(result) {
   const profileStatistics = await dao.getProfileStatisticsById(result.name);
   profileStatistics.faces++;
   await dao.updateProfileStatistics(profileStatistics);
@@ -94,17 +95,16 @@ async function newProfileImage(path) {
       })
       .then( profileId => {
         if(profileId) dao.getProfiles()
-          .then(profiles => {return updateFaceMatcher(profiles, false);}).then( result => {
+          .then(profiles => {return updateFaceMatcher(profiles, false);}).then( () => {
             res.writeHead(200, {'Content-Type': 'application/json'});
             res.end(JSON.stringify({ status: 'success', profileId: profileId}));
           })
           .catch( (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
-        else{
+        else {
           res.writeHead(200, {'Content-Type': 'application/json'});
           res.end(JSON.stringify({ status: 'success', profileId: profileId}));
         }
-      })
-      ;
+      });
     })
     .catch( (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
 }
@@ -113,7 +113,8 @@ async function newProfileImage(path) {
 async function activateServers() {
   console.time(`...Servers started in`);
   //console.time(`Models loaded and Face Matchers computed in`);
-  await facerecognition.loadModels(__dirname+process.env.MODELS_URL).then(facerecognition.updateFaceMatcher(false)).then(facerecognition.updateFaceMatcher(true));
+  await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
+  await facerecognition.updateFaceMatcher(false).then(facerecognition.updateFaceMatcher(true));
   //console.timeEnd(`Models loaded and Face Matchers computed in`);
   const address = await webserver.activateServer();
   console.timeEnd(`...Servers started in`);
