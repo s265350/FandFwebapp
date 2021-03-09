@@ -18,7 +18,10 @@ window.addEventListener('load', () => {
     // create an event source to receive messages from server
     const eventSource = new EventSource("/notifications");
     // Handler for assigning clientId
-    eventSource.addEventListener('id', (e) => {clientId = e.data;});
+    eventSource.addEventListener('id', async (e) => {
+        if(!clientId) clientId = e.data;
+        else await Api.sendClientId(e.data, clientId);
+    });
     // Handler for events of type 'strangerNotification' only
     eventSource.addEventListener('strangerNotification', async (e) => {
         const data = JSON.parse(e.data);

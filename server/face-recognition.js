@@ -50,9 +50,7 @@ exports.identifyMultiple = async (image) => {
     if (!faceMatcherProfiles || faceMatcherProfiles.length <= 0) {return undefined;}
     const displaySize = { width: image.width, height: image.height };
     faceapi.matchDimensions(image, displaySize);
-    console.time("result computation took");
     const detections = await faceapi.detectAllFaces(image).withFaceLandmarks().withFaceDescriptors();
-    console.timeEnd("result computation took");
     const resizedDetections = faceapi.resizeResults(detections, displaySize);
     const results = [];
     resizedDetections.map(d => faceMatcherProfiles.findBestMatch(d.descriptor)).forEach((resultP, i) => {

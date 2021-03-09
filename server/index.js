@@ -1,21 +1,25 @@
 /* MAIN SERVER */
-/* here image operations are performed */
+/* here face detection and recognition operations are performed */
 
 'use strict';
 
 /* Required External Modules */
 const express = require('express');
+require('dotenv').config();
+
+const fetch = require('node-fetch');
 
 const fs = require('fs');
 const chokidar = require('chokidar');
 const { createCanvas, loadImage } = require('canvas');
 
-const webserver = require('./webserver.js');
 const dao = require('./dao.js');
 const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
 const app = express();
+const url = (clientId) => {return `http://localhost:${(process.env.WEBPORT)? process.env.WEBPORT : '3999'}/recents/${clientId}`;};
+//const port = process.env.MAINPORT || '3999';
 
 /* App Configuration */
 const watcherOptions = {depth: 0, awaitWriteFinish: true};
@@ -26,9 +30,12 @@ watcherProfiles.on('add', path => newProfileImage(path));
 
 // called when a new image is added to the 'faces' folder
 async function newImage(path) {
+  //console.time("faces computation tooks");
   const clientId = path.split('_')[1];
   let stranger = false;
-  const recents = (webserver.getRecents(clientId))? webserver.getRecents(clientId) : [];
+  const getRecentsResponse = await fetch(url(clientId));
+  if(!getRecentsResponse.ok) throw `ERROR fetching ${url(clientId)}`;
+  const recents = await getRecentsResponse.json();
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
   if(results)
@@ -50,7 +57,18 @@ async function newImage(path) {
       }
     });
   fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
-  webserver.notification(clientId, stranger, recents);
+  const postRecentsResponse = await fetch(url(clientId), {
+    method: 'POST',
+    headers:{'Content-Type': 'application/json',},
+    body: JSON.stringify({stranger: stranger, recents: recents}),
+  });
+  if(!postRecentsResponse.ok) {
+    console.log(postRecentsResponse);
+    postRecentsResponse.json()
+        .then( (obj) => {console.log(obj);} ) // error msg in the response body
+        .catch( (err) => {console.log({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+  }
+  //console.timeEnd("faces computation tooks");
 }
 
 async function unknownResult(result, image) {
@@ -110,16 +128,29 @@ async function newProfileImage(path) {
 }
 
 /* Server Activation */
-(async function activateServers() {
-  console.time(`...Servers started in`);
-  //console.time(`Models loaded and Face Matchers computed in`);
+(exports.run = async function() {
+  console.log(`\n--------------------------------------------------------------------`);
+  console.log(`Server activation might take some time due to loading models and computing initial face descriptors...`);
+  console.log(`--------------------------------------------------------------------`);
+  console.time(`...Server activation ended in`);
   await facerecognition.loadModels(__dirname+process.env.MODELS_URL);
   await facerecognition.updateFaceMatcher(false).then(facerecognition.updateFaceMatcher(true));
-  //console.timeEnd(`Models loaded and Face Matchers computed in`);
-  const address = await webserver.activateServer();
-  console.timeEnd(`...Servers started in`);
-  console.log(`\nListening to requests on ${address} or http://localhost:${address.split(':')[address.split(':').length-1]}`);
+  console.log(`\n---------------------------------------`);
+  console.timeEnd(`...Server activation ended in`);
+  console.log(`---------------------------------------\n`);
 })();
 
-// Handling Promise Rejection Warning
-process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Main Server', 'msg': err}]});} );
+// Handling Promise Rejection Warning and crashes
+process
+  .on('unhandledRejection', (err, p) => {
+    console.error(err, 'Unhandled Rejection at Promise', p);
+    process.exit(1);
+  })
+  .on('uncaughtException', err => {
+    console.error(err, 'Uncaught Exception thrown');
+    process.exit(1);
+  })
+  .on('SIGTERM', err => {
+    console.error(err, 'SIGTERM');
+    process.exit(1);
+  });

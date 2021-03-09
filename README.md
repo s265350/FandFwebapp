@@ -6,7 +6,8 @@ Dal lato client un’interfaccia (in JavaScript e HTML) semplice e intuitiva per
 Il sistema verrà testato tramite webcam, utilizzando le nostre foto come membri della famiglia, inoltre chiederemo a persone a noi vicine di farsi riprendere per verificare che il sistema funzioni correttamente. 
 Il nostro obiettivo è quello di raggiungere almeno il 50% di riuscita, anche se vorremmo ottenere un risultato ottimale riuscendo ad avere il 70/80% di riuscita.
 
-To start the server open terminal and in server folder run: npm run dev
+# To start the application:
+open 2 terminal windows in server folder and run:
+- npm run dev:main (needs more time to start)
+- npm run dev:web (will print the url to paste in the browser)
 
-TODO:
-- library integration

@@ -20,7 +20,6 @@ const dao = require('./dao.js');
 const web = express();
 const port = process.env.WEBPORT || '4000';
 let clients = [];
-let recents = [];
 
 /* Process body content */
 web.use(express.json(),fileupload());
@@ -41,16 +40,26 @@ web.get('/notifications', (req, res) => {
   const clientId = tmpId;
   // sending the clientId and telling the client to retry every 10 seconds if connectivity is lost
   res.write(`event: id\ndata: ${clientId}\n\nretry: 10000\n`);
-  clients.push({ clientId: clientId, res });
+  clients.push({ clientId: `${clientId}`, res: res, recents: [] });
+  //console.log(`client ${clientId} connected`);
   // When client closes connection we update the clients list avoiding sendi notifications to the disconnected ones
   req.on('close', () => {
-    clients = clients.filter(c => c.clientId !== clientId);
-    recents = recents.filter(c => c.clientId !== clientId);
+    //console.log(`client ${clientId} disconnected`);
+    clients = clients.filter(c => {c.clientId !== clientId});
     res.end();
   });
 });
 
 /* App Configuration */
+
+// GET recents for the give clientId
+web.get('/recents/:clientId', (req, res) => {
+  if(!req.params.clientId) res.status(400).end();
+  const client = clients.filter(c => c.clientId === req.params.clientId)[0];
+  if(!client || client?.recents?.length <= 0) res.json([]);
+  else res.json(client.recents);
+});
+
 // GET all profiles rows as Profile objects
 web.get('/profiles', (req, res) => {
   dao.getProfiles()
@@ -132,6 +141,45 @@ web.get('/faces/profiles/:filename', (req, res) => {
 web.get('/faces/strangers/:filename', (req, res) => {
   if(!req.params.filename) res.status(400).end();
   res.sendFile(`${__dirname}/faces/strangers/${req.params.filename}`, {}, (err) => {if(err)res.status(503).json({errors: [{'param': 'Server', 'msg': err}],})});
+});
+
+// POST change clientId
+// Request body: clientId
+web.post('/clientid', [], (req, res) => {
+  if(!req.body.oldClientId || !req.body.newClientId) res.status(400).end();
+  if(!clients.filter(c => c.clientId === req.body.oldClientId)[0]){
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ status: 'success', clientId: req.body.newClientId}));
+    return;
+  }
+  const client = clients.filter(c => c.clientId === req.body.oldClientId);
+  clients.push({clientId: req.body.newClientId, res: client.res, recents: client.recents});
+  clients = clients.filter(c => c.clientId !== req.body.oldClientId);
+  //console.log(`client ${req.body.newClientId} reconnected`);
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', clientId: req.body.newClientId}));
+});
+
+// POST receive new recents for a client
+// Request params: client ID
+// Request body: stranger boolean and recents array
+web.post('/recents/:clientId', [], (req, res) => {
+  if(!req.params.clientId || (!req.body.stranger && req.body.stranger !== false)|| !req.body.recents) res.status(400).end();
+  const client = clients.filter(c => c.clientId === req.params.clientId)[0];
+  if(!client) {
+    //console.log(`client ${req.params.clientId} has disconnected`);
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({ status: 'success', clientId: req.params.clientId}));
+    return;
+  }
+  //console.log("client", clients.filter(c => c.clientId === req.params.clientId)[0]);
+  client.res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: req.body.stranger, recents: req.body.recents})}\n\n)retry: 10000\n`);
+  clients = clients.filter(c => c.clientId !== req.params.clientId);
+  clients.push({clientId: client.clientId, res: client.res, recents: req.body.recents});
+  //console.log("client", clients.filter(c => c.clientId === req.params.clientId)[0]);
+  console.log("image computation ended");
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', clientId: req.params.clientId}));
 });
 
 // POST upload a new profile row
@@ -341,21 +389,27 @@ web.delete(`/strangers/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-exports.activateServer = async function() {
+(exports.run = async function() {
   //console.time(`...WEB server started in`);
+  const address = `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
   web.listen(port, () => {
+    console.log(`\nListening to requests on ${address} or http://localhost:${address.split(':')[address.split(':').length-1]}`);
     //console.timeEnd(`...WEB server started in`);
   });
-  return `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
-}
+  //return address;
+})();
 
-exports.notification = function(clientId, stranger, lasts) {
-  recents = recents.filter(r => r.clientId !== clientId);
-  recents.push({clientId: clientId, recents: lasts});
-  clients.filter(c => c.clientId == clientId)[0].res.write(`event: strangerNotification\ndata: ${JSON.stringify({stranger: stranger, recents: lasts})}\n\n)retry: 10000\n`);
-}
-
-exports.getRecents = function(clientId) {return recents.filter(r => r.clientId == clientId)[0]?.recents;}
-
-// Handling Promise Rejection Warning
-process.on('unhandledRejection', (err) => {if(err) console.log({errors: [{'param': 'Web Server', 'msg': err}]});} );
+// Handling Promise Rejection Warning and crashes
+process
+  .on('unhandledRejection', (err, p) => {
+    console.error(err, 'Unhandled Rejection at Promise', p);
+    process.exit(1);
+  })
+  .on('uncaughtException', err => {
+    console.error(err, 'Uncaught Exception thrown');
+    process.exit(1);
+  })
+  .on('SIGTERM', err => {
+    console.error(err, 'SIGTERM');
+    process.exit(1);
+  });

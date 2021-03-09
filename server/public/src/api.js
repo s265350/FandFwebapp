@@ -109,6 +109,24 @@ async function getImage(filename, stranger) {
 
 /* POST */
 
+// send clientId
+async function sendClientId(oldClientId, newClientId) {
+    return new Promise( (resolve, reject) => {
+        fetch(`/clientid`, {
+            method: 'POST',
+            headers:{'Content-Type': 'application/json',},
+            body: JSON.stringify({oldClientId: oldClientId, newClientId: newClientId}),
+        }).then( (response) => {
+            if(response.ok) resolve(response.json());
+            else {
+                response.json()
+                    .then( (obj) => {reject(obj);} ) // error msg in the response body
+                    .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+            }
+        }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
 // upload a new profile row
 async function createProfile(profile) {
     return new Promise( (resolve, reject) => {
@@ -322,6 +340,7 @@ export {
     getAllStrangersId, 
     getStrangerById, 
     getImage, 
+    sendClientId, 
     createProfile, 
     createProfileStatistics, 
     changeProfileImage, 

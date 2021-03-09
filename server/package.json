@@ -5,10 +5,10 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "trace": "node --trace-warnings index.js",
-    "reject": "node --unhandled-rejections=strict index.js"
+    "dev": "nodemon index.js webserver.js",
+    "dev:main": "nodemon index.js",
+    "dev:web": "nodemon webserver.js",
+    "trace": "node --trace-warnings index.js webserver.js"
   },
   "keywords": [],
   "author": "",
