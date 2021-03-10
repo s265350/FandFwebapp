@@ -194,15 +194,7 @@ function clearEditModal(){
 
 async function submitEditModal(profile, save){
     const update = !(typeof profile === 'string' || profile instanceof String);
-    if(!save){
-        let avatar = profile;
-        if(update) {
-            avatar = profile.avatar;
-            await Api.deleteProfileStatistics(profile.profileId);
-            await Api.deleteProfile(profile.profileId);
-        }
-        await Api.deleteImage(avatar, !update);
-    } else {
+    if(save){
         if(document.getElementById("edit_firstname").classList.contains("border-warning") || document.getElementById("edit_phone").classList.contains("border-warning") || document.getElementById("edit_system").classList.contains("border-warning")){
             document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
             return;
@@ -227,20 +219,25 @@ async function submitEditModal(profile, save){
             await Api.createProfileStatistics(new ProfileStatistics(newProfile.profileId));
         }
         // avatar
-        if(document.getElementById("edit_avatar").getAttribute("src") != "svg/avatar.svg"){
-            newProfile.avatar = `${newProfile.profileId}.png`
-            await Api.changeProfileImage(newProfile.profileId, document.getElementById("edit_avatar").getAttribute("src"));
-            if(update) await Api.deleteImage(profile.avatar, false);
-            else {await Api.deleteImage(profile, true);await Api.deleteStranger(profile.split('.')[0]);}
+        newProfile.avatar = `${newProfile.profileId}.png`
+        const src = document.getElementById("edit_avatar").getAttribute("src");
+        const oldAvatar = (update)? profile.avatar : profile;
+        if(src != "svg/avatar.svg"){
+            await Api.changeProfileImage(newProfile.profileId, src);
+            if(update) await Api.deleteStranger(profile);
         } else {
-            if(update) newProfile.avatar = profile.avatar;
-            else {
-                await Api.saveStrangerImage(profile, newProfile.profileId);
-                newProfile.avatar = `${newProfile.profileId}.${profile.split('.')[profile.split('.').length-1]}`;
-            }
+            if(!update) await Api.changeProfileImage(newProfile.profileId, profile);
         }
         // update database
         await Api.updateProfile(newProfile);
+    } else {
+        let avatar = profile;
+        if(update) {
+            avatar = profile.avatar;
+            await Api.deleteProfileStatistics(profile.profileId);
+            await Api.deleteProfile(profile.profileId);
+        }
+        await Api.deleteImage(avatar, !update);
     }
     // toggle modal
     $("#edit_modal").modal("toggle");
@@ -429,7 +426,7 @@ async function familyListItem(loggedProfile, profile){
 
 // creates ad div html element containing the modal
 function createFamilyModal(){
-    const modal = document.createElement("div");modal.setAttribute("id", "family_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalFamilyLabel");modal.setAttribute("aria-hidden", "true");
+    const modal = document.createElement("div");modal.setAttribute("id", "family_modal");modal.setAttribute("class", "modal fade");modal.setAttribute("tabindex", "-1");modal.setAttribute("role", "dialog");modal.setAttribute("aria-labelledby", "modalFamilyLabel");modal.setAttribute("aria-hidden", "true");modal.setAttribute("data-backdrop", "static");modal.setAttribute("data-keyboard", "false");
     const doc = document.createElement("div");doc.setAttribute("class", "modal-dialog modal-dialog-scrollable modal-lg");doc.setAttribute("role", "document");modal.appendChild(doc);
     const content = document.createElement("div");content.setAttribute("class", "modal-content");doc.appendChild(content);
     // modal header

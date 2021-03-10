@@ -203,7 +203,7 @@ web.post('/statistics', [], (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// POST upload a new image in 'faces' folder
+// POST upload a new image in 'profiles' folder
 // Request body: image FILE to upload and the profileId
 web.post('/faces/profiles', [], async (req, res) => {
   if(!req.body.profileId || !req.body.imageBase64) res.status(400).end();
@@ -211,7 +211,7 @@ web.post('/faces/profiles', [], async (req, res) => {
   const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
   canvas.getContext('2d').drawImage(image, 0, 0);
   const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer, (err) => {
+  fs.writeFile(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
   res.writeHead(200, {'Content-Type': 'application/json'});
@@ -301,10 +301,10 @@ web.delete(`/faces/:filename`, (req, res) => {
   if(!req.params.filename) res.status(400).end();
   const path = (req.body.stranger)? "strangers" : "profiles";
   fs.unlink(`${__dirname}/faces/${path}/${req.params.filename}`, (err) => {
-    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
-    res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', profileId: req.params.filename}));
+    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});return;}
   });
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify({ status: 'success', profileId: req.params.filename}));
 });
 
 // DELETE delete a profile row
