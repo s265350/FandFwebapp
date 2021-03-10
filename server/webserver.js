@@ -186,7 +186,7 @@ web.post('/recents/:clientId', [], (req, res) => {
 // Request body: object describing a Profile { profileId*, firstName*, lastName, phone*, email, system*, family, notifications, notificationsPhone, notificationsEmail }
 web.post('/profiles', [], (req, res) => {
   if(!req.body.firstName || !req.body.phone || !req.body.system) res.status(400).end();
-  dao.createProfile({firstName: req.body.firstName, lastName: req.body.lastName, phone: req.body.phone, email: req.body.email, system: req.body.system, family: req.body.family, notifications: req.body.notifications, notificationsPhone: req.body.notificationsPhone, notificationsEmail: req.body.notificationsEmail})
+  dao.createProfile({profileId: '', firstName: req.body.firstName, lastName: req.body.lastName, phone: req.body.phone, email: req.body.email, system: req.body.system, family: req.body.family, notifications: req.body.notifications, notificationsPhone: req.body.notificationsPhone, notificationsEmail: req.body.notificationsEmail})
     .then( (profileId) => {
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({ status: 'success', profileId: profileId}));
@@ -211,7 +211,7 @@ web.post('/faces/profiles', [], async (req, res) => {
   const canvas = createCanvas(parseInt(image.width), parseInt(image.height));
   canvas.getContext('2d').drawImage(image, 0, 0);
   const buffer = canvas.toBuffer('image/png');
-  fs.writeFileSync(`${__dirname}/faces/${req.body.profileId}.png`, buffer, (err) => {
+  fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer, (err) => {
     if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
   });
   res.writeHead(200, {'Content-Type': 'application/json'});

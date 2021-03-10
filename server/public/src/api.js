@@ -282,9 +282,8 @@ async function updateProfileStatistics(profileStatistics) {
 
 // delete an image in "profiles" or "strangers" folder
 async function deleteImage(filename, stranger){
-    const path = (stranger)? 'strangers/' : 'profiles/';
     return new Promise( (resolve, reject) => {
-        fetch(`/faces/${path}/${filename}`, {
+        fetch(`/faces/${filename}`, {
             method: 'DELETE',
             headers:{'Content-Type': 'application/json',},
             body: JSON.stringify({"stranger": stranger}),
@@ -329,6 +328,21 @@ async function deleteProfileStatistics(profileId){
     });
 }
 
+// delete a profile
+async function deleteStranger(profileId){
+    return new Promise( (resolve, reject) => {
+        fetch(`/strangers/${profileId}`, {method: 'DELETE',})
+            .then( (response) => {
+                if(response.ok) resolve(null);
+                else {
+                    response.json()
+                        .then( (obj) => {reject(obj);} ) // error msg in the response body
+                        .catch( (err) => {reject({ errors: [{ param: "Application", msg: `Cannot parse server response: ${err}` }] }) }); // something else
+                }
+            }).catch( (err) => {reject({ errors: [{ param: "Server", msg: `Cannot communicate: ${err}` }] }) }); // connection errors
+    });
+}
+
 export {
     getAllProfiles, 
     getAllProfilesId, 
@@ -352,4 +366,5 @@ export {
     deleteImage, 
     deleteProfile, 
     deleteProfileStatistics, 
+    deleteStranger, 
 };

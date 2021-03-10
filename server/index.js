@@ -97,7 +97,8 @@ async function profileResult(result) {
 
 // called when a new image is added to 'profile' folder
 async function newProfileImage(path) {
-  loadImage(req.body.imageBase64)
+  return;
+  loadImage(path)
     .then( image => {
       facerecognition.identifySingle(image)
         .then(result => {

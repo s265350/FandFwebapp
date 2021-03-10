@@ -189,10 +189,10 @@ exports.createProfile = function(profile) {
             .then( profileId => {
                 db.run(sql, [profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profileId+".png"], function (err) {
                     if (err) reject(err);
-                    resolve(profileId);
-                })
-                .catch( (err) => {reject(err);return;});
-        });
+                    else resolve(profileId);
+                });
+            })
+            .catch( (err) => {reject(err);});
     });
 };
 
@@ -202,7 +202,7 @@ exports.createProfileStatistics = function(profileStatistics) {
         const sql = 'INSERT INTO statistics (profileId, faces, unrecognized) VALUES(?,?,?)';
         db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized], function (err) {
             if (err) reject(err);
-            resolve(profileStatistics.profileId);
+            else resolve(profileStatistics.profileId);
         })
     });
 };
@@ -215,10 +215,10 @@ exports.createStranger = function() {
             .then(profileId => {
                 db.run(sql, [profileId, 1, profileId+".png"], function (err) {
                     if (err) reject(err);
-                    resolve(profileId);
+                    else resolve(profileId);
                 });
             })
-            .catch( (err) => {reject(err);return;});
+            .catch( (err) => {reject(err);});
     });
 };
 
@@ -230,7 +230,7 @@ exports.updateProfile = function(profile){
         const sql = 'UPDATE profiles SET profileId = ?, firstName = ?, lastName = ?, phone = ?, email = ?, system = ?, family = ?, notifications = ?, notificationsPhone = ?, notificationsEmail = ?, avatar = ? WHERE profileId = ?';
         db.run(sql, [profile.profileId, profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, profile.notifications, profile.notificationsPhone, profile.notificationsEmail, profile.avatar, profile.profileId], (err) => {
             if(err) reject(err);
-            resolve(null);
+            else resolve(profile.profileId);
         });
     });
 }
@@ -241,7 +241,7 @@ exports.updateProfileStatistics = function(profileStatistics){
         const sql = 'UPDATE statistics SET profileId = ?, faces = ?, unrecognized = ? WHERE profileId = ?';
         db.run(sql, [profileStatistics.profileId, profileStatistics.faces, profileStatistics.unrecognized, profileStatistics.profileId], (err) => {
             if(err) reject(err);
-            resolve(null);
+            else resolve(profileStatistics.profileId);
         });
     });
 }
@@ -252,7 +252,7 @@ exports.updateStranger = function(stranger){
         const sql = 'UPDATE strangers SET profileId = ?, detected = ?, avatar = ? WHERE profileId = ?';
         db.run(sql, [stranger.profileId, stranger.detected, stranger.avatar, stranger.profileId], (err) => {
             if(err) reject(err);
-            resolve(null);
+            else resolve(stranger.profileId);
         });
     });
 }
@@ -265,7 +265,7 @@ exports.deleteProfile = function(profileId){
         const sql = 'DELETE FROM profiles WHERE profileId = ?';
         db.run(sql, [profileId], (err) => {
             if(err) reject(err);
-            resolve(null);
+            else resolve(profileId);
         });
     });
 }
@@ -276,7 +276,7 @@ exports.deleteProfileStatistics = function(profileId){
         const sql = 'DELETE FROM statistics WHERE profileId = ?';
         db.run(sql, [profileId], (err) => {
             if(err) reject(err);
-            resolve(null);
+            else resolve(profileId);
         });
     });
 }

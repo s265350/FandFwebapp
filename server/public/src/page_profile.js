@@ -207,12 +207,12 @@ async function submitEditModal(profile, save){
             document.getElementById("edit_notification_adv").classList.remove("text-warning", "text-secondary");document.getElementById("edit_notification_adv").classList.add("show", "text-danger");document.getElementById("edit_notification_adv").innerHTML = `<i class="fa fa-times-circle mr-2"></i><b>Yellow fields are mandatory</b>`;
             return;
         }
-        // create a rofile object (system, family and avatar fields are computed below)
-        const newProfile = new Profile(
+        // create a profile object (system, family and avatar fields are computed below)
+        const newProfile = new Profile('',
             document.getElementById("edit_firstname").value,document.getElementById("edit_lastname").value,
             document.getElementById("edit_phone").value,document.getElementById("edit_mail").value,"","",
-            document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
-            document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),profile
+            document.getElementById("edit_phonebutton").classList.contains("fa-bell") || document.getElementById("edit_mailbutton").classList.contains("fa-bell"),document.getElementById("edit_phonebutton").classList.contains("fa-bell"),document.getElementById("edit_mailbutton").classList.contains("fa-bell"),
+            profile
         );
         // system role (mandatory field)
         document.getElementById("edit_system").childNodes.forEach(child => {if(document.getElementById("edit_system").value === child.value)newProfile.system = child.innerText;});
@@ -228,10 +228,10 @@ async function submitEditModal(profile, save){
         }
         // avatar
         if(document.getElementById("edit_avatar").getAttribute("src") != "svg/avatar.svg"){
-            newProfile.avatar = await Api.changeProfileImage(newProfile.profileId, document.getElementById("edit_avatar").getAttribute("src"));
-            newProfile.avatar = newProfile.avatar.directory;
+            newProfile.avatar = `${newProfile.profileId}.png`
+            await Api.changeProfileImage(newProfile.profileId, document.getElementById("edit_avatar").getAttribute("src"));
             if(update) await Api.deleteImage(profile.avatar, false);
-            else await Api.deleteImage(profile, true);
+            else {await Api.deleteImage(profile, true);await Api.deleteStranger(profile.split('.')[0]);}
         } else {
             if(update) newProfile.avatar = profile.avatar;
             else {
