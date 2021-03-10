@@ -3,8 +3,8 @@
 class Stranger {
     constructor(profileId){
         this.profileId = profileId;
-        this.avatar = profileId+".png";
-        this.detections = 1; // considering the profile image
+        this.detected = 1; // considering the first image
+        this.avatar = `${profileId}.png`;
     }
     static from (json) {
         // returns a Stranger obj from a json one

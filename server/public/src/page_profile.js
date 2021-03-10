@@ -222,9 +222,9 @@ async function submitEditModal(profile, save){
         if(update){
             newProfile.profileId = profile.profileId;
         } else {
-            const json = await Api.newProfile(newProfile);
+            const json = await Api.createProfile(newProfile);
             newProfile.profileId = json.profileId;
-            await Api.newProfileStatistics(new ProfileStatistics(newProfile.profileId));
+            await Api.createProfileStatistics(new ProfileStatistics(newProfile.profileId));
         }
         // avatar
         if(document.getElementById("edit_avatar").getAttribute("src") != "svg/avatar.svg"){

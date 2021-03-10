@@ -26,13 +26,11 @@ window.addEventListener('load', () => {
     eventSource.addEventListener('strangerNotification', async (e) => {
         const data = JSON.parse(e.data);
         if(!data.stranger)return;
-        await Api.getAllProfiles().forEach(p => { 
-            if(p.system === 'Admin') {// for now notifications are sent only to the admin (because is the only one that "logs in")
-                if(p.notifications) pushNotification();
-                if(p.notificationsPhone) Api.sendSmsNotification(p.phone);
-                if(p.notificationsEmail) Api.sendEmailNotification(p.firstName, p.email);
-            }
-        });
+        // for now notifications are sent only to the admin (because is the only one that "logs in")
+        const admin = await Api.getAdminProfile()
+        if(admin.notifications) pushNotification();
+        if(admin.notificationsPhone) Api.sendSmsNotification(admin.phone);
+        if(admin.notificationsEmail) Api.sendEmailNotification(admin.firstName, admin.email);
     });
     // Check if the browser supports notifications and ask the user for permission
     if(!("Notification" in window)) alert("This browser does not support desktop notification");

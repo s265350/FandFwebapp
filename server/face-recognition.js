@@ -59,7 +59,7 @@ exports.identifyMultiple = async (image) => {
         let isStranger = false;
         if (name == 'unknown') {
             isStranger = true;
-            if(faceMatcherStrangers && faceMatcherStrangers.length > 0) name = faceMatcherStrangers.findBestMatch(resizedDetections[i].descriptor).toString().split(' ')[0];
+            if(faceMatcherStrangers && faceMatcherStrangers._labeledDescriptors.length > 0) name = faceMatcherStrangers.findBestMatch(resizedDetections[i].descriptor).toString().split(' ')[0];
         }
         results.push({ name: name, isStranger: isStranger, x: x - width, y: y - height, width: width * 4, height: height * 4 });
     });
@@ -79,7 +79,7 @@ exports.identifySingle = async (image) => {
         let isStranger = false;
         if (name == 'unknown') {
             isStranger = true;
-            if(faceMatcherStrangers && faceMatcherStrangers.length > 0) name = faceMatcherStrangers.findBestMatch(resizedDetection.descriptor).toString().split(' ')[0];
+            if(faceMatcherStrangers && faceMatcherStrangers._labeledDescriptors.length > 0) name = faceMatcherStrangers.findBestMatch(resizedDetection.descriptor).toString().split(' ')[0];
         }
         return { name: name, isStranger: isStranger, x: x - width, y: y - height, width: width * 4, height: height * 4 };
     });

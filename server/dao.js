@@ -131,7 +131,7 @@ exports.getStrangers = function() {
         const sql = 'SELECT * FROM strangers';
         db.all(sql, [], (err, rows) => {
             if (err) {reject(err);return;}
-            const strangers = rows.map( (row) => ({profileId: row.profileId, detections: row.detections, avatar: row.avatar}));
+            const strangers = rows.map( (row) => ({profileId: row.profileId, detected: row.detected, avatar: row.avatar}));
             resolve(strangers);
         });
     });
@@ -157,7 +157,7 @@ exports.getStrangerById = function(profileId) {
             if (err) {reject(err);return;}
             if (row == undefined) {resolve(null);
             } else {
-                const stranger = {profileId: row.profileId, detections: row.detections, avatar: row.avatar};
+                const stranger = {profileId: row.profileId, detected: row.detected, avatar: row.avatar};
                 resolve(stranger);
             }
         });
@@ -210,10 +210,10 @@ exports.createProfileStatistics = function(profileStatistics) {
 // upload a new statistics row
 exports.createStranger = function() {
     return new Promise((resolve, reject) => {
-        const sql = 'INSERT INTO strangers (profileId, detections, avatar) VALUES(?,?,?)';
+        const sql = 'INSERT INTO strangers (profileId, detected, avatar) VALUES(?,?,?)';
         this.generateId(8)
             .then(profileId => {
-                db.run(sql, [profileId, 1, profileId+"png"], function (err) {
+                db.run(sql, [profileId, 1, profileId+".png"], function (err) {
                     if (err) reject(err);
                     resolve(profileId);
                 });
@@ -249,8 +249,8 @@ exports.updateProfileStatistics = function(profileStatistics){
 // update a strangers row
 exports.updateStranger = function(stranger){
     return new Promise( (resolve, reject) => {
-        const sql = 'UPDATE strangers SET profileId = ?, detections = ?, avatar = ? WHERE profileId = ?';
-        db.run(sql, [stranger.profileId, stranger.detections, stranger.avatar, stranger.profileId], (err) => {
+        const sql = 'UPDATE strangers SET profileId = ?, detected = ?, avatar = ? WHERE profileId = ?';
+        db.run(sql, [stranger.profileId, stranger.detected, stranger.avatar, stranger.profileId], (err) => {
             if(err) reject(err);
             resolve(null);
         });

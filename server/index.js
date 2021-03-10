@@ -18,7 +18,7 @@ const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
 const app = express();
-const webURL = (clientId) => {return `${process.env.URL}${process.env.MAINPORT || '3999'}/recents/${clientId}`};
+const webURL = (clientId) => {return `${process.env.URL}${process.env.WEBPORT || '3999'}/recents/${clientId}`};
 
 /* App Configuration */
 const watcherOptions = {depth: 0, awaitWriteFinish: true};
@@ -76,14 +76,16 @@ async function unknownResult(result, image) {
   const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
   canvas.getContext('2d').drawImage(image, result.x, result.y, result.width, result.height, 0, 0, result.width, result.height);
   const buffer = canvas.toBuffer('image/png');
-  fs.writeFile(newPath, buffer, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
-  await facerecognition.updateFaceMatcher(true);
+  fs.writeFile(newPath, buffer, async (err) => {
+    if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});
+    else await facerecognition.updateFaceMatcher(true);
+  });
 }
 
 async function strangerResult(result) {
   const stranger = await dao.getStrangerById(result.name);
-  console.log(stranger);
-  stranger.detections++;
+  //console.log(stranger);
+  stranger.detected++;
   await dao.updateStranger(stranger);
 }
 
