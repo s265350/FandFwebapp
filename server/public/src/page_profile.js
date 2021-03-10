@@ -321,7 +321,7 @@ async function populateProfile(loggedProfile, profile){
                 notificationsEmail.classList.replace("text-secondary", "text-primary");notificationsEmail.firstChild.classList.replace("fa-envelope-open", "fa-envelope");
             }
         }
-        const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
+        const newProfile = new Profile('', profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
             !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
         newProfile.profileId = profile.profileId;
         Api.updateProfile(newProfile);
@@ -337,7 +337,7 @@ async function populateProfile(loggedProfile, profile){
             } else {
                 notificationsPhone.classList.replace("text-primary", "text-secondary");notificationsPhone.firstChild.classList.replace("fa-phone", "fa-phone-slash");
             }
-            const newProfile = new Profile(profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
+            const newProfile = new Profile('', profile.firstName, profile.lastName, profile.phone, profile.email, profile.system, profile.family, 
                 !notificationsMain.firstChild.classList.contains("fa-bell-slash"), !notificationsPhone.firstChild.classList.contains("fa-phone-slash"), !notificationsEmail.firstChild.classList.contains("fa-envelope-open"), profile.avatar);
             newProfile.profileId = profile.profileId;
             Api.updateProfile(newProfile);

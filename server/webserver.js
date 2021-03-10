@@ -203,18 +203,6 @@ web.post('/statistics', [], (req, res) => {
     .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
 });
 
-// POST upload a new stranger row
-// Request body: object describing a stranger { profileId*, detections }
-web.post('/strangers', [], (req, res) => {
-  if(!req.body.profileId || !req.body.detections) res.status(400).end();
-  dao.createStranger({profileId: req.body.profileId, detections: req.body.detections})
-    .then( (profileId) => {
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: profileId}));
-    })
-    .catch( (err) => res.status(503).json({errors: [{'param': 'Server', 'msg': err}],}) );
-});
-
 // POST upload a new image in 'faces' folder
 // Request body: image FILE to upload and the profileId
 web.post('/faces/profiles', [], async (req, res) => {
@@ -244,26 +232,6 @@ web.post('/screenshot', [], async (req, res) => {
   });
   res.writeHead(200, {'Content-Type': 'application/json'});
   res.end(JSON.stringify({ status: 'success', profileId: profileId}));
-});
-
-// POST move an image from a folder to another one
-// Request params: the folder in which the image is
-// Request body: the file name of the image (old id) and the destination folder
-web.post('/faces/:folder', [], (req, res) => {
-  if(!req.params.folder || !req.body.filename || !req.body.folder) res.status(400).end();
-  const oldPath = `${__dirname}/faces/${req.params.folder}/${req.body.filename}`;
-  const newPath = `${__dirname}/faces/${req.body.folder}/${req.body.filename}`;
-  fs.readFile(oldPath, (err, data) => {
-      if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
-      fs.writeFile(newPath, data, (err) => {
-          if(err) throw res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});
-      });
-  });
-  fs.unlink(oldPath, (err) => {
-    if(err) {res.status(500).json({errors: [{'param': 'Server', 'msg': err}],});}
-    res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({ status: 'success', profileId: req.body.filename}));
-  });
 });
 
 // POST email
@@ -319,19 +287,6 @@ web.put('/profiles/:profileId', (req, res) => {
 web.put('/statistics/:profileId', (req, res) => {
   if(!req.params.profileId || !req.body) res.status(400).end();
   dao.updateProfileStatistics(req.body)
-    .then( () => {
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));
-    })
-    .catch( (err) => res.status(500).json({errors: [{'param': 'Server', 'msg': err}],}) );
-});
-
-// PUT update a stranger row
-// Request parameters: profile ID
-// Request body: object describing a stranger { profileId*, detections }
-web.put('/strangers/:profileId', (req, res) => {
-  if(!req.params.profileId || !req.body) res.status(400).end();
-  dao.updateStranger(req.body)
     .then( () => {
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({ status: 'success', profileId: req.params.profileId}));

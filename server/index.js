@@ -18,8 +18,7 @@ const facerecognition = require('./face-recognition.js');
 
 /* App Variables */
 const app = express();
-const url = (clientId) => {return `http://localhost:${(process.env.WEBPORT)? process.env.WEBPORT : '3999'}/recents/${clientId}`;};
-//const port = process.env.MAINPORT || '3999';
+const webURL = (clientId) => {return `${process.env.URL}${process.env.MAINPORT || '3999'}/recents/${clientId}`};
 
 /* App Configuration */
 const watcherOptions = {depth: 0, awaitWriteFinish: true};
@@ -33,8 +32,8 @@ async function newImage(path) {
   //console.time("faces computation tooks");
   const clientId = path.split('_')[1];
   let stranger = false;
-  const getRecentsResponse = await fetch(url(clientId));
-  if(!getRecentsResponse.ok) throw `ERROR fetching ${url(clientId)}`;
+  const getRecentsResponse = await fetch(webURL(clientId));
+  if(!getRecentsResponse.ok) throw `ERROR fetching ${webURL(clientId)}`;
   const recents = await getRecentsResponse.json();
   const image = await loadImage(`${__dirname}/${path}`);
   const results = await facerecognition.identifyMultiple(image);
@@ -57,7 +56,7 @@ async function newImage(path) {
       }
     });
   fs.unlink(path, (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
-  const postRecentsResponse = await fetch(url(clientId), {
+  const postRecentsResponse = await fetch(webURL(clientId), {
     method: 'POST',
     headers:{'Content-Type': 'application/json',},
     body: JSON.stringify({stranger: stranger, recents: recents}),

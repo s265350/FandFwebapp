@@ -86,7 +86,7 @@ async function loadRecognize(){
     container.appendChild(Recognize.createRecognizeModal());
     container.appendChild(Profile.createEditModal());
     const strangers = await Api.getStrangers();
-    for(let i=0; i<strangers.length; i++){list.appendChild(await Recognize.recognizeListItem(strangers[i]));}
+    for(let i=0; i<strangers.length; i++){list.appendChild(await Recognize.recognizeListItem(strangers[i].avatar));}
 }
 
 async function loadProfile(){
