@@ -97,36 +97,7 @@ async function profileResult(result) {
 
 // called when a new image is added to 'profile' folder
 async function newProfileImage(path) {
-  return;
-  loadImage(path)
-    .then( image => {
-      facerecognition.identifySingle(image)
-        .then(result => {
-        if(!result) return undefined;
-        let profileId;
-        if(result.name != 'unknown' && !result.isStranger && req.body.profileId == result.name){
-          profileId = result.name;
-          const canvas = createCanvas(parseInt(result.width), parseInt(result.height));
-          canvas.getContext('2d').drawImage(image, 0, 0);
-          const buffer = canvas.toBuffer('image/png');
-          fs.writeFileSync(`${__dirname}/faces/profiles/${req.body.profileId}.png`, buffer);
-        }
-        return profileId;
-      })
-      .then( profileId => {
-        if(profileId) dao.getProfiles()
-          .then(profiles => {return updateFaceMatcher(profiles, false);}).then( () => {
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.end(JSON.stringify({ status: 'success', profileId: profileId}));
-          })
-          .catch( (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
-        else {
-          res.writeHead(200, {'Content-Type': 'application/json'});
-          res.end(JSON.stringify({ status: 'success', profileId: profileId}));
-        }
-      });
-    })
-    .catch( (err) => {if(err) console.log({errors: [{'param': 'Server', 'msg': err}]});} );
+  await facerecognition.updateFaceMatcher(false);
 }
 
 /* Server Activation */

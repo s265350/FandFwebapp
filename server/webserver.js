@@ -344,7 +344,7 @@ web.delete(`/strangers/:profileId`, (req, res) => {
 });
 
 /* Server Activation */
-(exports.run = async function() {
+exports.run = async function(port) {
   //console.time(`...WEB server started in`);
   const address = `http://${Object.values(require('os').networkInterfaces()).reduce((r, list) => r.concat(list.reduce((rr, i) => rr.concat(i.family==='IPv4' && !i.internal && i.address || []), [])), [])[0]}:${port}`;
   web.listen(port, () => {
@@ -352,7 +352,7 @@ web.delete(`/strangers/:profileId`, (req, res) => {
     //console.timeEnd(`...WEB server started in`);
   });
   //return address;
-})();
+}
 
 // Handling Promise Rejection Warning and crashes
 process
